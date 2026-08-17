@@ -1,0 +1,2045 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>生物溫習程式</title>
+  <style>
+    :root {
+      --primary: #2c6e49;
+      --primary-dark: #245a3d;
+      --accent: #1f6feb;
+      --accent-dark: #1a5cc4;
+      --bg: #f4f6f8;
+      --card-bg: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --correct-bg: #e8f7ee;
+      --correct-text: #1e7e34;
+      --wrong-bg: #fdeceb;
+      --wrong-text: #c0392b;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Microsoft JhengHei", "Noto Sans TC", "PingFang TC", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .app-header {
+      position: sticky;
+      top: 0;
+      background: var(--primary);
+      color: #fff;
+      padding: 14px 20px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      z-index: 10;
+    }
+
+    .app-header h1 {
+      margin: 0;
+      font-size: 20px;
+      cursor: pointer;
+      display: inline-block;
+      user-select: none;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 20px 16px 48px;
+    }
+
+    .page-title {
+      font-size: 24px;
+      margin: 8px 0 16px;
+    }
+
+    .sub {
+      color: var(--muted);
+      margin: 0 0 8px;
+    }
+
+    .meta {
+      color: var(--muted);
+      margin: 0 0 8px;
+    }
+
+    .hidden { display: none !important; }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin: 16px 0;
+    }
+
+    .big-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 40px 20px;
+      text-align: center;
+      font-size: 22px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+      transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+      user-select: none;
+    }
+
+    .big-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
+      border-color: var(--accent);
+    }
+
+    .big-card .icon {
+      font-size: 34px;
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    .topic-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 16px 0;
+    }
+
+    .topic-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+
+    .topic-no {
+      flex: 0 0 auto;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--primary);
+      color: #fff;
+      border-radius: 8px;
+      font-weight: 700;
+    }
+
+    .topic-name {
+      flex: 1 1 auto;
+      font-weight: 600;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      font-family: inherit;
+      text-decoration: none;
+      text-align: center;
+    }
+
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-dark); }
+    .btn-success { background: var(--primary); color: #fff; }
+    .btn-success:hover { background: var(--primary-dark); }
+    .btn-neutral { background: #64748b; color: #fff; }
+    .btn-neutral:hover { background: #475569; }
+    .btn-source { background: #7c3aed; color: #fff; }
+    .btn-source:hover { background: #6d28d9; }
+    .btn[disabled] { opacity: 0.6; cursor: not-allowed; }
+
+    .question-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-top: 14px;
+    }
+
+    .question-text {
+      white-space: pre-line;
+      font-size: 17px;
+      font-weight: 600;
+      margin: 0 0 12px;
+    }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .option-btn {
+      text-align: left;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fafbfc;
+      cursor: pointer;
+      font-size: 15px;
+      font-family: inherit;
+      color: var(--text);
+      transition: background 0.12s, border-color 0.12s;
+    }
+
+    .option-btn:hover:not(:disabled) {
+      background: #eef2f7;
+      border-color: var(--accent);
+    }
+
+    .option-btn:disabled {
+      cursor: default;
+      opacity: 0.85;
+    }
+
+    .option-btn.selected,
+    .option-btn.selected:hover:not(:disabled) {
+      background: #e8f0fe;
+      border-color: var(--accent);
+      box-shadow: inset 0 0 0 1px var(--accent);
+    }
+
+    .feedback {
+      white-space: pre-line;
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+
+    .feedback.correct { background: var(--correct-bg); color: var(--correct-text); }
+    .feedback.incorrect { background: var(--wrong-bg); color: var(--wrong-text); }
+
+    .analysis-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-top: 14px;
+    }
+
+    .score {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 6px 0;
+    }
+
+    .review-item {
+      border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+    }
+
+    .review-item:last-child { border-bottom: none; }
+    .review-q { font-weight: 600; }
+    .review-reason { color: var(--wrong-text); }
+
+    .timer-wrap { margin-top: 10px; }
+    .timer-bar-bg {
+      width: 100%;
+      height: 12px;
+      background: #e2e8f0;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .timer-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #27ae60, #2ecc71);
+      width: 100%;
+      transition: width 1s linear;
+    }
+    .timer-text {
+      margin-top: 6px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .tech-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+      margin-top: 16px;
+    }
+
+    @media (min-width: 720px) {
+      .tech-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    .tech-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .tech-card h2 {
+      margin: 0 0 4px;
+      font-size: 20px;
+      color: var(--primary);
+    }
+
+    .tech-subtitle {
+      color: var(--muted);
+      margin: 0 0 12px;
+    }
+
+    .tech-dse {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 8px 0;
+    }
+
+    .badge {
+      background: #e67e22;
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .related-list {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .tech-card h3 {
+      margin: 16px 0 6px;
+      font-size: 16px;
+      border-left: 4px solid var(--accent);
+      padding-left: 8px;
+    }
+
+    .bullet-list {
+      margin: 6px 0;
+      padding-left: 20px;
+    }
+
+    .bullet-list li { margin-bottom: 4px; }
+
+    .tech-concept { color: #374151; }
+
+    .mcq {
+      background: #fafbfc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 12px;
+    }
+
+    .mcq-q {
+      font-weight: 600;
+      white-space: pre-line;
+      margin: 0 0 8px;
+    }
+
+    .notice {
+      color: var(--muted);
+      background: #fff8e1;
+      border: 1px solid #f1e3a8;
+      padding: 10px 12px;
+      border-radius: 8px;
+    }
+
+    .actions {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <h1 onclick="goHome()">生物溫習程式</h1>
+  </header>
+
+  <div class="container">
+
+    <!-- 主頁 -->
+    <section id="homePage" class="page">
+      <h2 class="page-title">主頁</h2>
+      <div class="card-grid">
+        <div class="big-card" onclick="goToMCPage()">
+          <span class="icon">📝</span>多項選擇題
+        </div>
+        <div class="big-card" onclick="goToTechPage()">
+          <span class="icon">🔬</span>學習前沿科技
+        </div>
+      </div>
+    </section>
+
+    <!-- 多項選擇題頁面 -->
+    <section id="mcPage" class="page hidden">
+      <h2 class="page-title">多項選擇題</h2>
+      <div class="card-grid">
+        <div class="big-card" onclick="goToPracticeMode()">
+          <span class="icon">✏️</span>練習模式
+        </div>
+        <div class="big-card" onclick="goToChallengeMode()">
+          <span class="icon">⏱️</span>挑戰模式
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-neutral" onclick="goHome()">返回主頁</button>
+      </div>
+    </section>
+
+    <!-- 練習模式：課題列表 -->
+    <section id="practiceListPage" class="page hidden">
+      <h2 class="page-title">練習模式</h2>
+      <p class="sub">選擇課題（每課題 20 題）</p>
+      <p id="practiceListNotice"></p>
+      <div id="practiceTopicList" class="topic-list"></div>
+      <div class="actions">
+        <button class="btn btn-neutral" onclick="goToMCPage()">返回多項選擇題</button>
+      </div>
+    </section>
+
+    <!-- 練習模式：作答 -->
+    <section id="practiceQuizPage" class="page hidden">
+      <h2 class="page-title">練習模式</h2>
+      <p id="practiceMeta" class="meta"></p>
+      <div id="practiceQuestionContainer" class="question-card"></div>
+      <p id="practiceFeedback" class="feedback"></p>
+      <div class="actions">
+        <button id="practiceNextBtn" class="btn btn-primary hidden" onclick="nextPractice()">下一題</button>
+        <button id="practiceAnalysisBtn" class="btn btn-success hidden" onclick="showPracticeAnalysis()">進入分析頁</button>
+        <button class="btn btn-neutral" onclick="goToPracticeMode()">返回課題列表</button>
+      </div>
+    </section>
+
+    <!-- 練習模式：分析頁 -->
+    <section id="practiceAnalysisPage" class="page hidden">
+      <h2 class="page-title">練習分析</h2>
+      <div id="practiceAnalysisContent" class="analysis-card"></div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="goHome()">返回主頁</button>
+      </div>
+    </section>
+
+    <!-- 挑戰模式：作答 -->
+    <section id="challengePage" class="page hidden">
+      <h2 class="page-title">挑戰模式</h2>
+      <div id="challengeTimerWrap" class="timer-wrap">
+        <div class="timer-bar-bg">
+          <div id="challengeTimerBar" class="timer-bar"></div>
+        </div>
+        <p id="challengeTimerText" class="timer-text">剩餘時間：40:00</p>
+      </div>
+      <p id="challengeNotice"></p>
+      <div id="challengeQuestionContainer" class="question-card"></div>
+      <div class="actions">
+        <button id="challengePrevBtn" class="btn btn-neutral" onclick="prevChallenge()">上一題</button>
+        <button id="challengeNextBtn" class="btn btn-primary hidden" onclick="nextChallenge()">下一題</button>
+        <button id="challengeFinishBtn" class="btn btn-success hidden" onclick="finishChallenge()">完成</button>
+        <button class="btn btn-neutral" onclick="exitChallenge()">退出挑戰模式</button>
+      </div>
+    </section>
+
+    <!-- 挑戰模式：分析頁 -->
+    <section id="challengeAnalysisPage" class="page hidden">
+      <h2 class="page-title">挑戰分析</h2>
+      <div id="challengeAnalysisContent" class="analysis-card"></div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="goHome()">返回主頁</button>
+      </div>
+    </section>
+
+    <!-- 學習前沿科技 -->
+    <section id="techPage" class="page hidden">
+      <h2 class="page-title">學習前沿科技</h2>
+      <div id="techContainer" class="tech-grid"></div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="goHome()">返回主頁</button>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+// topics.js
+// HKDSE 生物科 — 37 課題清單（來源：content-spec.md 第 2 節）
+// 每項結構：{ no: 課題編號, name: 課題名稱（繁體中文，與 content-spec.md 完全一致） }
+
+const TOPICS = [
+  { no: 1, name: "生物學入門" },
+  { no: 2, name: "生命分子" },
+  { no: 3, name: "細胞組織" },
+  { no: 4, name: "物質穿越細胞膜的活動" },
+  { no: 5, name: "新陳代謝與酶" },
+  { no: 6, name: "食物與人類" },
+  { no: 7, name: "人的營養" },
+  { no: 8, name: "人體的氣體交換" },
+  { no: 9, name: "人體內物質的轉運" },
+  { no: 10, name: "植物的營養與氣體交換" },
+  { no: 11, name: "植物的蒸騰、轉運與支持" },
+  { no: 12, name: "細胞週期與細胞分裂" },
+  { no: 13, name: "有花植物的生殖" },
+  { no: 14, name: "人的生殖" },
+  { no: 15, name: "生長與發育" },
+  { no: 16, name: "刺激、感受器與反應" },
+  { no: 17, name: "人體的協調" },
+  { no: 18, name: "人體的運動" },
+  { no: 19, name: "體內平衡" },
+  { no: 20, name: "生態系" },
+  { no: 21, name: "光合作用" },
+  { no: 22, name: "呼吸作用" },
+  { no: 23, name: "個人健康與傳染病" },
+  { no: 24, name: "非傳染病與疾病的預防" },
+  { no: 25, name: "身體的防禦機制" },
+  { no: 26, name: "基礎遺傳學" },
+  { no: 27, name: "分子遺傳學" },
+  { no: 28, name: "生物工程" },
+  { no: 29, name: "生物多樣性" },
+  { no: 30, name: "生命的起源與進化的證據" },
+  { no: 31, name: "進化的機制與物種形成" },
+  { no: 32, name: "體温調節" },
+  { no: 33, name: "水份調節" },
+  { no: 34, name: "血液內氣體成分的調節" },
+  { no: 35, name: "生殖週期的激素控制" },
+  { no: 36, name: "人類對環境的影響" },
+  { no: 37, name: "污染控制與保育" }
+];
+
+</script>
+  <script>
+const QB1 = [
+  { topicNo: 1, q: "以下哪項是所有生物共有的生命特徵？", options: ["進行光合作用", "能繁殖後代", "具有細胞壁", "能自行移動"], correct: 1, reasons: ["光合作用只限於綠色植物及部分微生物，並非所有生物共有。", "正確答案", "細胞壁只存在於植物、真菌及部分微生物，動物細胞沒有細胞壁。", "並非所有生物都能自行移動，例如植物固定於泥土中。"] },
+  { topicNo: 1, q: "科學方法中，實驗後分析數據並解釋結果的步驟是甚麼？", options: ["提出問題", "作出假設", "得出結論", "進行觀察"], correct: 2, reasons: ["提出問題是科學探究的起點，先於實驗進行。", "假設是在實驗前提出的可測試預測。", "正確答案", "觀察是收集資料的過程，通常在實驗前或實驗中進行。"] },
+  { topicNo: 1, q: "顯微鏡的總放大率如何計算？", options: ["目鏡放大率 × 物鏡放大率", "目鏡放大率 + 物鏡放大率", "物鏡放大率 ÷ 目鏡放大率", "目鏡放大率 − 物鏡放大率"], correct: 0, reasons: ["正確答案", "放大率應相乘而非相加。", "放大率應相乘而非相除。", "放大率應相乘而非相減。"] },
+  { topicNo: 1, q: "生物分類學中，雙名法由哪兩部分組成？", options: ["綱名和目名", "科名和屬名", "界名和門名", "屬名和種名"], correct: 3, reasons: ["雙名法不包括綱名和目名，而是以屬名和種名命名。", "雙名法不包括科名和屬名。", "雙名法不包括界名和門名。", "正確答案"] },
+  { topicNo: 1, q: "以下哪項是對照實驗中「對照組」的作用？", options: ["增加實驗的樣本數目", "作為比較的基準，排除其他變數的影響", "縮短實驗所需時間", "確保實驗結果一定符合假設"], correct: 1, reasons: ["增加樣本數目能提高可靠性，但對照組的主要作用並非如此。", "正確答案", "對照組的作用是比較而非縮短時間。", "對照組不能保證結果符合假設，其作用是提供比較基準。"] },
+  { topicNo: 1, q: "一位學生想知道溫度是否影響酶的活性。此實驗的獨立變數是甚麼？", options: ["酶的活性", "反應的產物量", "反應時間", "溫度"], correct: 3, reasons: ["酶的活性是應變量（依變數），隨溫度改變而變化。", "產物量是應變量。", "反應時間是需控制的變數之一。", "正確答案"] },
+  { topicNo: 1, q: "以下哪項正確描述「假設」在科學探究中的角色？", options: ["一個已被證實的事實", "一個無法測試的想法", "一個可被實驗驗證的預測", "實驗的最終結論"], correct: 2, reasons: ["假設尚未被證實，需經實驗驗證。", "假設必須可以被測試，否則不具科學意義。", "正確答案", "假設是實驗前的預測，而非最終結論。"] },
+  { topicNo: 1, q: "生物學家把生物分為五界。以下哪項不屬於這五界之一？", options: ["病毒界", "原核生物界", "真菌界", "動物界"], correct: 0, reasons: ["正確答案", "原核生物界是五界之一，包括細菌等生物。", "真菌界是五界之一。", "動物界是五界之一。"] },
+  { topicNo: 1, q: "以下哪項是最佳的「生物學」定義？", options: ["只研究人類疾病的學科", "以科學方法研究生物及生命現象的學科", "只研究動植物分類的學科", "只研究基因的學科"], correct: 1, reasons: ["生物學不限於研究疾病。", "正確答案", "分類只是生物學的其中一個範疇。", "基因研究只是生物學的其中一個範疇。"] },
+  { topicNo: 1, q: "使用顯微鏡觀察標本時，應先使用哪種物鏡？", options: ["高倍物鏡", "油浸物鏡", "低倍物鏡", "任意物鏡皆可"], correct: 2, reasons: ["高倍物鏡視野小，應先用低倍物鏡定位。", "油浸物鏡需特別處理，不宜先用。", "正確答案", "應先用低倍物鏡找到目標，再轉用高倍物鏡。"] },
+  { topicNo: 1, q: "以下哪個單位適合量度細胞的大小？", options: ["米（m）", "千米（km）", "毫米（mm）", "微米（μm）"], correct: 3, reasons: ["米太大，不適合量度細胞。", "千米更大，不適合。", "毫米對大部分細胞而言仍過大。", "正確答案"] },
+  { topicNo: 1, q: "以下哪項是生物「排泄」的正確含義？", options: ["移除細胞代謝產生的廢物", "從消化道排出未消化的食物殘渣", "分泌消化液到消化道", "呼出二氧化碳以外的所有氣體"], correct: 0, reasons: ["正確答案", "排出食物殘渣屬於排遺，不是排泄。", "分泌消化液不是排泄。", "排泄包括移除多種代謝廢物，例如二氧化碳和尿素，不限於氣體。"] },
+  { topicNo: 1, q: "以下哪項實驗設計能提高結果的可靠性？", options: ["只進行一次實驗並盡快下結論", "隱瞞不符合假設的數據", "重複實驗並使用多個樣本", "只保留支持假設的結果"], correct: 2, reasons: ["只進行一次實驗可靠性較低。", "隱瞞數據是錯誤做法，會降低可靠性。", "正確答案", "只保留支持假設的結果會造成偏差，不科學。"] },
+  { topicNo: 1, q: "以下哪項是「生物能感應外界刺激」的例子？", options: ["植物進行光合作用", "含羞草被觸碰後葉片閉合", "動物進行細胞分裂", "葡萄糖被分解釋放能量"], correct: 1, reasons: ["光合作用是營養活動，不是對刺激的反應。", "正確答案", "細胞分裂是生長過程，不是感應。", "分解葡萄糖屬呼吸作用，不是感應。"] },
+  { topicNo: 1, q: "科學家提出新理論前，通常會先進行甚麼？", options: ["重複觀察和實驗以收集證據", "直接宣布結論", "修改數據以配合理論", "忽略與理論不符的數據"], correct: 0, reasons: ["正確答案", "結論應基於證據，而非直接宣布。", "修改數據是不誠實的行為。", "忽略矛盾的數據會導致錯誤結論。"] },
+  { topicNo: 1, q: "以下哪項關於「對照實驗」的敘述是正確的？", options: ["對照組與實驗組的所有條件都不同", "對照組不需要任何處理", "對照組的結果一定與實驗組相同", "除獨立變數外，對照組與實驗組的條件應保持相同"], correct: 3, reasons: ["除獨立變數外，其他條件應相同，否則無法比較。", "對照組通常接受相同處理但缺少獨立變數的處理。", "對照組結果應作為比較基準，未必與實驗組相同。", "正確答案"] },
+  { topicNo: 1, q: "一位學生用碘液測試樣本，樣本變成藍黑色，這顯示樣本含有甚麼？", options: ["蛋白質", "澱粉", "脂質", "還原糖"], correct: 1, reasons: ["蛋白質用縮二脲測試呈紫色，不是碘液。", "正確答案", "脂質用油漬測試，不是碘液。", "還原糖用本立德試劑測試，不是碘液。"] },
+  { topicNo: 1, q: "以下哪項是生物分類的最小分類單位？", options: ["屬", "科", "種", "目"], correct: 2, reasons: ["屬比種大。", "科比種大。", "正確答案", "目比種大。"] },
+  { topicNo: 1, q: "以下哪項不是「科學探究」應有的態度？", options: ["只接受符合個人想法的證據", "保持客觀和誠實", "根據證據修改原有想法", "記錄實驗中所有觀察結果"], correct: 0, reasons: ["正確答案", "保持客觀誠實是科學探究應有的態度。", "根據證據修改想法是科學探究應有的態度。", "如實記錄觀察是科學探究應有的態度。"] },
+  { topicNo: 1, q: "在食物測試中，本立德試劑與還原糖一起加熱後會出現甚麼結果？", options: ["變成藍黑色", "變成紫色", "變成藍色", "出現磚紅色沉澱"], correct: 3, reasons: ["碘液測試澱粉才會出現藍黑色。", "縮二脲測試蛋白質才呈紫色。", "本立德試劑原為藍色，加熱後有還原糖才變磚紅色。", "正確答案"] },
+  { topicNo: 2, q: "澱粉和纖維素都是由葡萄糖組成，為何性質不同？", options: ["葡萄糖單位的連接方式不同", "組成的元素不同", "纖維素含氮而澱粉不含", "澱粉是蛋白質的一種"], correct: 0, reasons: ["正確答案", "兩者都由碳、氫、氧組成，元素相同。", "兩者都不含氮。", "澱粉是多醣，不是蛋白質。"] },
+  { topicNo: 2, q: "蛋白質的基本組成單位是甚麼？", options: ["葡萄糖", "脂肪酸", "氨基酸", "核苷酸"], correct: 2, reasons: ["葡萄糖是碳水化合物的基本單位。", "脂肪酸是脂質的組成部分。", "正確答案", "核苷酸是核酸的基本單位。"] },
+  { topicNo: 2, q: "以下哪項是脂質在人體內的其中一個功能？", options: ["作為酶催化反應", "儲存能量及提供絕緣", "攜帶氧氣", "儲存遺傳信息"], correct: 1, reasons: ["酶是蛋白質，不是脂質。", "正確答案", "攜氧是紅血球內血紅蛋白的功能。", "儲存遺傳信息是 DNA 的功能。"] },
+  { topicNo: 2, q: "以下哪種測試可用以檢測蛋白質？", options: ["碘液測試", "本立德測試", "油漬測試", "縮二脲測試"], correct: 3, reasons: ["碘液測試用於檢測澱粉。", "本立德測試用於檢測還原糖。", "油漬測試用於檢測脂質。", "正確答案"] },
+  { topicNo: 2, q: "組成 DNA 的糖是甚麼？", options: ["脫氧核糖", "葡萄糖", "蔗糖", "核糖"], correct: 0, reasons: ["正確答案", "葡萄糖是單糖，但非 DNA 的組成部分。", "蔗糖是雙糖，不屬於 DNA。", "核糖是 RNA 的組成糖。"] },
+  { topicNo: 2, q: "以下哪項關於水的敘述是正確的？", options: ["水是良好的有機溶劑", "水的比熱容很低", "水是良好的溶劑，並參與許多化學反應", "水分子不含氫原子"], correct: 2, reasons: ["水是無機化合物，不是有機溶劑。", "水的比熱容很高，有助穩定體溫。", "正確答案", "水分子由兩個氫原子和一個氧原子組成。"] },
+  { topicNo: 2, q: "麥芽糖由哪兩種單糖組成？", options: ["葡萄糖和果糖", "兩分子葡萄糖", "葡萄糖和半乳糖", "果糖和半乳糖"], correct: 1, reasons: ["葡萄糖加果糖組成蔗糖。", "正確答案", "葡萄糖加半乳糖組成乳糖。", "麥芽糖由兩分子葡萄糖組成，不含果糖或半乳糖。"] },
+  { topicNo: 2, q: "以下哪項是「多醣」的例子？", options: ["葡萄糖", "蔗糖", "乳糖", "糖原"], correct: 3, reasons: ["葡萄糖是單糖。", "蔗糖是雙糖。", "乳糖是雙糖。", "正確答案"] },
+  { topicNo: 2, q: "食物中蛋白質被消化後，最終產物主要是甚麼？", options: ["氨基酸", "脂肪酸", "葡萄糖", "甘油"], correct: 0, reasons: ["正確答案", "脂肪酸是脂質消化的產物。", "葡萄糖是碳水化合物消化的產物。", "甘油是脂質消化的產物。"] },
+  { topicNo: 2, q: "以下哪項關於酶的敘述是正確的？", options: ["酶都是脂質", "酶會被反應消耗掉", "酶的化學本質是蛋白質", "所有酶都在細胞外工作"], correct: 2, reasons: ["酶是蛋白質，不是脂質。", "酶是催化劑，反應後不會被消耗。", "正確答案", "許多酶在細胞內工作，例如參與呼吸作用的酶。"] },
+  { topicNo: 2, q: "碘液遇到澱粉會變成甚麼顏色？", options: ["磚紅色", "藍黑色", "紫色", "綠色"], correct: 1, reasons: ["磚紅色是本立德試劑測試還原糖的結果。", "正確答案", "紫色是縮二脲測試蛋白質的結果。", "碘液測試澱粉呈藍黑色，不是綠色。"] },
+  { topicNo: 2, q: "脂質分子由甚麼組成？", options: ["葡萄糖和果糖", "氨基酸和肽鍵", "核糖和磷酸", "甘油和脂肪酸"], correct: 3, reasons: ["葡萄糖和果糖組成蔗糖。", "氨基酸經肽鍵連接組成蛋白質。", "核糖和磷酸是核苷酸的組成部分。", "正確答案"] },
+  { topicNo: 2, q: "以下哪項是碳水化合物在人體的主要功能？", options: ["提供能量", "儲存遺傳信息", "催化化學反應", "組成抗體"], correct: 0, reasons: ["正確答案", "儲存遺傳信息是核酸的功能。", "催化反應是酶（蛋白質）的功能。", "抗體是蛋白質。"] },
+  { topicNo: 2, q: "以下哪項不屬於蛋白質的功能？", options: ["作為酶催化反應", "作為抗體抵禦病原體", "作為主要的遺傳物質", "構成肌肉組織"], correct: 2, reasons: ["酶是蛋白質。", "抗體是蛋白質。", "正確答案", "肌肉主要成分是蛋白質。"] },
+  { topicNo: 2, q: "核酸的基本組成單位是甚麼？", options: ["氨基酸", "核苷酸", "單糖", "脂肪酸"], correct: 1, reasons: ["氨基酸組成蛋白質。", "正確答案", "單糖是碳水化合物單位。", "脂肪酸組成脂質。"] },
+  { topicNo: 2, q: "縮二脲測試蛋白質時會出現甚麼顏色？", options: ["藍黑色", "磚紅色", "藍色", "紫色"], correct: 3, reasons: ["藍黑色是碘液測試澱粉的結果。", "磚紅色是本立德測試還原糖的結果。", "本立德試劑原為藍色，有還原糖時加熱才變磚紅色。", "正確答案"] },
+  { topicNo: 2, q: "以下哪項是還原糖的例子？", options: ["葡萄糖", "澱粉", "纖維素", "糖原"], correct: 0, reasons: ["正確答案", "澱粉是多醣，不是還原糖。", "纖維素是多醣，不是還原糖。", "糖原是多醣，不是還原糖。"] },
+  { topicNo: 2, q: "糖原在人體中主要儲存於哪兩個器官？", options: ["心臟和肺", "腎和皮膚", "肝和肌肉", "脾和胃"], correct: 2, reasons: ["心臟和肺不是糖原的主要儲存部位。", "腎和皮膚不是糖原的主要儲存部位。", "正確答案", "脾和胃不是糖原的主要儲存部位。"] },
+  { topicNo: 2, q: "以下哪項是維生素的特點？", options: ["能提供大量能量", "人體只需少量，但缺乏會引致缺乏症", "是人體的主要能源", "全部都能由人體自行合成"], correct: 1, reasons: ["維生素不提供能量。", "正確答案", "碳水化合物和脂質才是主要能源。", "部分維生素人體無法自行合成，須從食物攝取。"] },
+  { topicNo: 2, q: "纖維素不能被人體消化，但對健康仍然重要，因為它能：", options: ["提供大量能量", "合成蛋白質", "溶解脂質", "促進腸道蠕動，有助排便"], correct: 3, reasons: ["人體不能消化纖維素，故不能提供能量。", "纖維素不是蛋白質合成的原料。", "纖維素不溶於水，也不能溶解脂質。", "正確答案"] },
+  { topicNo: 3, q: "以下哪項結構是植物細胞有而動物細胞沒有的？", options: ["細胞膜", "葉綠體", "細胞核", "線粒體"], correct: 1, reasons: ["細胞膜存在於所有細胞。", "正確答案", "細胞核存在於動植物細胞。", "線粒體存在於動植物細胞。"] },
+  { topicNo: 3, q: "細胞學說指出：", options: ["所有細胞都由非生物自然產生", "只有植物由細胞組成", "細胞不含遺傳物質", "所有生物都由細胞組成，細胞來自既有細胞"], correct: 3, reasons: ["細胞學說否定自然發生，認為細胞來自既有細胞。", "動植物都由細胞組成。", "細胞含有 DNA 等遺傳物質。", "正確答案"] },
+  { topicNo: 3, q: "以下哪項是控制細胞活動並含有遺傳物質的結構？", options: ["細胞核", "線粒體", "核糖體", "高爾基體"], correct: 0, reasons: ["正確答案", "線粒體負責釋放能量，不是控制中心。", "核糖體負責蛋白質合成。", "高爾基體負責修飾和包裝蛋白質。"] },
+  { topicNo: 3, q: "以下哪項是線粒體的功能？", options: ["進行光合作用", "合成蛋白質", "進行呼吸作用，釋放能量", "儲存遺傳信息"], correct: 2, reasons: ["光合作用在葉綠體進行。", "蛋白質在核糖體合成。", "正確答案", "儲存遺傳信息是細胞核的功能。"] },
+  { topicNo: 3, q: "蛋白質在細胞中哪個結構合成？", options: ["高爾基體", "核糖體", "溶酶體", "液泡"], correct: 1, reasons: ["高爾基體修飾包裝蛋白質，不是合成場所。", "正確答案", "溶酶體含消化酶，分解物質。", "液泡儲存物質和維持膨壓。"] },
+  { topicNo: 3, q: "植物細胞的細胞壁主要由哪種物質組成？", options: ["蛋白質", "脂質", "澱粉", "纖維素"], correct: 3, reasons: ["細胞壁不是由蛋白質組成。", "細胞壁不是由脂質組成。", "澱粉是儲存性多醣，不是細胞壁成分。", "正確答案"] },
+  { topicNo: 3, q: "以下哪個排序正確顯示生物結構由簡至繁的層次？", options: ["細胞 → 組織 → 器官 → 系統 → 個體", "組織 → 細胞 → 器官 → 個體", "器官 → 系統 → 細胞 → 組織", "個體 → 系統 → 器官 → 組織 → 細胞"], correct: 0, reasons: ["正確答案", "應由細胞開始，再組成組織。", "細胞是最基本層次，應排最前。", "順序應由簡至繁，由細胞開始。"] },
+  { topicNo: 3, q: "細胞內許多化學反應在哪裏進行？", options: ["細胞壁", "液泡", "細胞質", "細胞膜"], correct: 2, reasons: ["細胞壁主要提供支持和保護，不是反應場所。", "液泡儲存物質，不是主要反應場所。", "正確答案", "細胞膜控制物質進出，不是主要反應場所。"] },
+  { topicNo: 3, q: "以下哪項關於原核細胞的敘述是正確的？", options: ["具有真正的細胞核", "沒有以膜包圍的細胞核", "只存在於動物", "比真核細胞大"], correct: 1, reasons: ["原核細胞沒有真正的細胞核。", "正確答案", "原核生物包括細菌，不是動物。", "原核細胞一般比真核細胞小。"] },
+  { topicNo: 3, q: "植物細胞的大型液泡主要功能是甚麼？", options: ["儲存水分並維持細胞膨壓", "進行光合作用", "控制細胞活動", "合成蛋白質"], correct: 0, reasons: ["正確答案", "光合作用在葉綠體進行。", "控制細胞活動是細胞核。", "蛋白質在核糖體合成。"] },
+  { topicNo: 3, q: "使用顯微鏡觀察洋蔥表皮細胞時，加入碘液的目的通常是甚麼？", options: ["殺死所有細胞", "使細胞壁溶解", "提供能量給細胞", "使細胞核等結構染色，便於觀察"], correct: 3, reasons: ["碘液不是用來殺死細胞。", "碘液不會溶解細胞壁。", "碘液不提供能量。", "正確答案"] },
+  { topicNo: 3, q: "以下哪項是人體中「組織」的例子？", options: ["心臟", "循環系統", "肌肉組織", "一個神經細胞"], correct: 2, reasons: ["心臟是器官。", "循環系統是系統。", "正確答案", "單一細胞不是組織，組織由相似細胞組成。"] },
+  { topicNo: 3, q: "以下哪項結構是動物細胞和植物細胞共有的？", options: ["細胞壁", "細胞膜", "葉綠體", "大型中央液泡"], correct: 1, reasons: ["細胞壁僅植物細胞有。", "正確答案", "葉綠體僅植物細胞有。", "大型中央液泡僅植物細胞有。"] },
+  { topicNo: 3, q: "溶酶體的主要功能是甚麼？", options: ["含消化酶分解廢物或外來物質", "合成蛋白質", "儲存遺傳信息", "產生能量"], correct: 0, reasons: ["正確答案", "核糖體合成蛋白質。", "細胞核儲存遺傳信息。", "線粒體產生能量。"] },
+  { topicNo: 3, q: "以下哪項是人體最大的器官？", options: ["心臟", "肺", "肝", "皮膚"], correct: 3, reasons: ["心臟不是最大器官。", "肺不是最大器官。", "肝不是最大器官。", "正確答案"] },
+  { topicNo: 3, q: "高爾基體在細胞中的主要功能是甚麼？", options: ["進行光合作用", "複製 DNA", "修飾、包裝和分泌蛋白質", "分解葡萄糖"], correct: 2, reasons: ["光合作用在葉綠體。", "DNA 複製在細胞核。", "正確答案", "分解葡萄糖主要在線粒體。"] },
+  { topicNo: 3, q: "細胞膜的其中一個重要功能是甚麼？", options: ["提供堅硬的支持", "控制物質進出細胞", "儲存大量水分", "合成 DNA"], correct: 1, reasons: ["堅硬支持主要由細胞壁提供（植物）。", "正確答案", "儲水是液泡功能。", "DNA 合成在細胞核。"] },
+  { topicNo: 3, q: "以下哪項是細胞核的功能？", options: ["儲存遺傳物質並控制細胞活動", "分解有毒物質", "合成脂質", "儲存細胞液"], correct: 0, reasons: ["正確答案", "分解有毒物質是過氧化物酶體等結構的功能，不是細胞核。", "脂質合成主要在平滑內質網。", "儲存細胞液是液泡功能。"] },
+  { topicNo: 3, q: "觀察動物細胞時，通常使用哪種染色劑使細胞核更清晰？", options: ["碘液", "本立德試劑", "縮二脲試劑", "亞甲藍"], correct: 3, reasons: ["碘液常用於植物細胞如洋蔥表皮。", "本立德試劑用於測試還原糖。", "縮二脲試劑用於測試蛋白質。", "正確答案"] },
+  { topicNo: 3, q: "以下哪項關於細胞分化的敘述是正確的？", options: ["分化後細胞失去所有功能", "所有細胞分化後都相同", "細胞特化成不同類型以執行不同功能", "分化只發生在植物"], correct: 2, reasons: ["分化後細胞仍執行特定功能。", "分化正是使細胞變得多樣。", "正確答案", "動植物細胞都會分化。"] },
+  { topicNo: 4, q: "擴散是物質分子由甚麼方向移動的過程？", options: ["由高濃度區域移向低濃度區域", "由低濃度區域移向高濃度區域", "只由細胞外移向細胞內", "只由細胞內移向細胞外"], correct: 0, reasons: ["正確答案", "擴散是順濃度梯度，由高至低。", "擴散方向取決於濃度梯度，不限於單一方向。", "擴散方向取決於濃度梯度，不限於單一方向。"] },
+  { topicNo: 4, q: "以下哪項是主動運輸與擴散的主要分別？", options: ["主動運輸不需能量", "主動運輸只能運輸氣體", "主動運輸需要能量並可逆濃度梯度進行", "主動運輸不需要載體蛋白"], correct: 2, reasons: ["主動運輸需要能量。", "主動運輸不限於氣體，可運輸離子等。", "正確答案", "主動運輸需要載體蛋白協助。"] },
+  { topicNo: 4, q: "滲透作用是指：", options: ["溶質分子透過選擇性透膜", "水分子透過選擇性透膜由高水勢移向低水勢", "水分子逆濃度梯度移動", "氣體分子透過細胞壁"], correct: 1, reasons: ["滲透涉及水分子，不是溶質分子。", "正確答案", "滲透是順水勢梯度，不需能量。", "滲透涉及選擇性透膜，不是細胞壁。"] },
+  { topicNo: 4, q: "把動物細胞放入低滲溶液中，細胞會發生甚麼變化？", options: ["收縮", "保持不變", "細胞壁破裂", "吸水膨脹甚至破裂"], correct: 3, reasons: ["低滲溶液中水進入細胞，細胞膨脹而非收縮。", "細胞會吸水，不會保持不變。", "動物細胞沒有細胞壁。", "正確答案"] },
+  { topicNo: 4, q: "植物細胞置於高滲溶液中會出現甚麼現象？", options: ["質壁分離", "細胞膨脹", "質壁復原", "細胞分裂加快"], correct: 0, reasons: ["正確答案", "高滲溶液使細胞失水，不會膨脹。", "質壁復原發生在細胞重新吸水時。", "高滲溶液不會加快細胞分裂。"] },
+  { topicNo: 4, q: "以下哪項是主動運輸的例子？", options: ["氧氣進入血液", "二氧化碳離開細胞", "海藻細胞從海水中吸收碘離子", "水分子進入根毛細胞"], correct: 2, reasons: ["氧氣進入血液是擴散。", "二氧化碳離開細胞是擴散。", "正確答案", "水進入根毛細胞是滲透。"] },
+  { topicNo: 4, q: "葡萄糖進入小腸絨毛細胞通常涉及哪種過程？", options: ["只靠簡單擴散", "主動運輸（並常與擴散共同作用）", "只靠滲透", "蒸騰作用"], correct: 1, reasons: ["葡萄糖分子較大，常需載體協助或主動運輸。", "正確答案", "滲透只涉及水分子。", "蒸騰作用是植物水分散失過程。"] },
+  { topicNo: 4, q: "以下哪項因素會增加擴散速率？", options: ["降低溫度", "增加擴散距離", "增大分子體積", "增大濃度梯度"], correct: 3, reasons: ["降低溫度會減慢分子運動，降低擴散速率。", "增加距離會減慢擴散。", "分子越大移動越慢。", "正確答案"] },
+  { topicNo: 4, q: "細胞膜主要由哪種結構組成？", options: ["磷脂雙層與蛋白質", "纖維素網狀結構", "單層蛋白質", "澱粉和脂質"], correct: 0, reasons: ["正確答案", "纖維素是細胞壁成分。", "細胞膜含磷脂雙層和蛋白質，不是單層蛋白質。", "細胞膜不含澱粉。"] },
+  { topicNo: 4, q: "載體蛋白在物質轉運中的角色是甚麼？", options: ["提供能量給細胞", "分解葡萄糖", "協助特定物質跨越細胞膜", "儲存水分"], correct: 2, reasons: ["能量由 ATP 提供，不是載體蛋白。", "載體蛋白不分解葡萄糖。", "正確答案", "載體蛋白不儲存水分。"] },
+  { topicNo: 4, q: "以下哪種物質可透過擴散直接穿越細胞膜的磷脂雙層？", options: ["葡萄糖", "氧氣", "鈉離子", "蛋白質"], correct: 1, reasons: ["葡萄糖分子較大，需載體協助。", "正確答案", "離子帶電荷，難以直接穿越磷脂雙層。", "蛋白質分子太大，不能直接穿越。"] },
+  { topicNo: 4, q: "植物根毛細胞從土壤吸收礦物質離子，即使土壤中離子濃度較低仍能吸收，這是因為：", options: ["滲透作用", "蒸騰作用", "簡單擴散", "主動運輸"], correct: 3, reasons: ["滲透只涉及水分子。", "蒸騰作用與水分運輸有關。", "簡單擴散只能由高至低濃度，不能逆濃度吸收。", "正確答案"] },
+  { topicNo: 4, q: "把植物細胞放入純水中，細胞會如何？", options: ["吸水變硬（膨脹），但因細胞壁而不破裂", "失水收縮", "完全不變", "細胞壁溶解"], correct: 0, reasons: ["正確答案", "純水是低滲溶液，細胞吸水而非失水。", "細胞會吸水，不會完全不變。", "細胞壁不會溶解。"] },
+  { topicNo: 4, q: "以下哪項關於「選擇性透膜」的敘述是正確的？", options: ["所有物質都能自由通過", "所有物質都不能通過", "只允許某些物質通過", "只存在於植物細胞壁"], correct: 2, reasons: ["選擇性透膜限制物質通過。", "選擇性透膜允許某些物質通過。", "正確答案", "選擇性透膜指細胞膜等，細胞壁是自由透性的。"] },
+  { topicNo: 4, q: "腎臟重吸收葡萄糖時使用主動運輸，這過程需要：", options: ["光和葉綠素", "能量（ATP）和載體蛋白", "氧氣和二氧化碳", "高溫"], correct: 1, reasons: ["光不是主動運輸所需。", "正確答案", "氧氣和二氧化碳與主動運輸無直接關係。", "高溫不是主動運輸所需條件。"] },
+  { topicNo: 4, q: "細胞在等滲溶液中會發生甚麼？", options: ["持續吸水", "持續失水", "細胞必定破裂", "水分進出達至動態平衡"], correct: 3, reasons: ["等滲溶液水勢相等，不會持續吸水。", "等滲溶液不會持續失水。", "等滲溶液不會導致破裂。", "正確答案"] },
+  { topicNo: 4, q: "以下哪項不是影響擴散速率的因素？", options: ["溶液的顏色", "溫度", "濃度梯度", "擴散距離"], correct: 0, reasons: ["正確答案", "溫度影響分子動能，影響擴散速率。", "濃度梯度越大擴散越快。", "距離越短擴散越快。"] },
+  { topicNo: 4, q: "氧氣從肺泡進入血液依靠甚麼過程？", options: ["主動運輸", "滲透", "擴散", "吞噬作用"], correct: 2, reasons: ["氧氣順濃度梯度擴散，不需主動運輸。", "滲透只涉及水分子。", "正確答案", "吞噬作用是細胞吞入固體物質。"] },
+  { topicNo: 4, q: "細胞膜上蛋白質的功能不包括以下哪項？", options: ["作為載體運輸物質", "合成 ATP", "作為受體接收訊息", "作為酶催化反應"], correct: 1, reasons: ["載體蛋白可運輸物質。", "正確答案", "受體蛋白接收訊號。", "部分膜蛋白具酶活性。"] },
+  { topicNo: 4, q: "把新鮮生菜浸入濃鹽水中，生菜會變軟，原因是：", options: ["細胞吸水膨脹", "細胞壁增厚", "鹽進入細胞", "細胞失水，膨壓下降"], correct: 3, reasons: ["濃鹽水是高滲溶液，細胞失水而非吸水。", "細胞壁不會因鹽水增厚。", "主要是水分離開細胞，不是鹽大量進入。", "正確答案"] },
+  { topicNo: 5, q: "代謝作用包括哪兩類過程？", options: ["光合作用和呼吸作用", "擴散和滲透", "分解代謝和合成代謝", "有絲分裂和減數分裂"], correct: 2, reasons: ["光合和呼吸是具體代謝途徑，不是兩大分類。", "擴散和滲透是物質轉運，不是代謝分類。", "正確答案", "細胞分裂不是代謝的兩大分類。"] },
+  { topicNo: 5, q: "酶的化學本質是甚麼？", options: ["脂質", "蛋白質", "碳水化合物", "核酸"], correct: 1, reasons: ["酶不是脂質。", "正確答案", "酶不是碳水化合物。", "酶不是核酸。"] },
+  { topicNo: 5, q: "酶在反應中扮演的角色是甚麼？", options: ["被消耗的反應物", "提供能量的物質", "改變反應的平衡位置", "降低活化能的生物催化劑"], correct: 3, reasons: ["酶是催化劑，不會被消耗。", "酶不提供能量。", "酶加速反應達至平衡，但不改變平衡位置。", "正確答案"] },
+  { topicNo: 5, q: "酶的「活性位點」是甚麼？", options: ["酶表面與受質結合的特定部位", "酶儲存能量的部位", "酶被分解的部位", "酶與水結合的部位"], correct: 0, reasons: ["正確答案", "酶不儲存能量。", "活性位點不是被分解部位。", "活性位點與受質結合，不是與水結合。"] },
+  { topicNo: 5, q: "溫度過高會使酶失去活性，主要原因是：", options: ["受質被消耗殆盡", "酶與受質結合得更緊", "酶蛋白質變性，活性位點形狀改變", "酶溶解於水中"], correct: 2, reasons: ["高溫使酶失活是因酶變性，不是受質耗盡。", "高溫使酶變性，不能正常結合。", "正確答案", "酶失活是變性所致，不是溶解。"] },
+  { topicNo: 5, q: "以下哪項關於酶特異性的敘述是正確的？", options: ["一種酶可催化所有反應", "一種酶通常只催化一種或一類受質", "酶的特異性與溫度無關", "所有酶的活性位點形狀相同"], correct: 1, reasons: ["酶具專一性，不能催化所有反應。", "正確答案", "溫度影響酶活性，包括其特異性表現。", "不同酶的活性位點形狀不同。"] },
+  { topicNo: 5, q: "pH 值對酶活性的影響，最合理的解釋是：", options: ["pH 只影響受質顏色", "pH 不影響酶", "pH 只改變酶的數量", "極端的 pH 會改變酶的形狀，使其變性"], correct: 3, reasons: ["pH 影響酶活性，不是受質顏色。", "pH 會影響酶活性。", "pH 不改變酶的數量。", "正確答案"] },
+  { topicNo: 5, q: "在酶促反應中，受質濃度增加至一定程度後，反應速率不再上升，最可能的原因是：", options: ["酶的活性位點已被飽和", "酶的溫度上升", "受質被完全分解", "溶液的 pH 變為中性"], correct: 0, reasons: ["正確答案", "溫度不必然隨受質濃度上升。", "受質濃度增加而非耗盡。", "pH 不因受質增加而改變。"] },
+  { topicNo: 5, q: "以下哪項關於「催化劑」的敘述是正確的？", options: ["催化劑會改變反應產物的種類", "催化劑在反應後會被分解", "催化劑加速反應但本身不被消耗", "催化劑只能在高溫下工作"], correct: 2, reasons: ["催化劑不改變產物種類。", "催化劑不被消耗。", "正確答案", "催化劑（酶）在適宜溫度下工作，高溫反而可能失活。"] },
+  { topicNo: 5, q: "人體酶的「最適溫度」大約是多少？", options: ["0°C", "約 37°C", "約 60°C", "約 100°C"], correct: 1, reasons: ["0°C 太低，酶活性低。", "正確答案", "60°C 過高，酶會變性。", "100°C 會使酶變性。"] },
+  { topicNo: 5, q: "以下哪項是「合成代謝」的例子？", options: ["葡萄糖分解成二氧化碳和水", "蛋白質分解成氨基酸", "糖原分解成葡萄糖", "氨基酸合成蛋白質"], correct: 3, reasons: ["葡萄糖分解屬分解代謝。", "蛋白質分解屬分解代謝。", "糖原分解屬分解代謝。", "正確答案"] },
+  { topicNo: 5, q: "酶活性受溫度影響的曲線中，超過最適溫度後活性急劇下降，因為：", options: ["酶已變性", "受質已經耗盡", "產物抑制了酶", "酶數量增加"], correct: 0, reasons: ["正確答案", "高溫失活是變性所致，不是受質耗盡。", "不是產物抑制所致。", "酶數量不會因高溫增加。"] },
+  { topicNo: 5, q: "以下哪項是「分解代謝」的例子？", options: ["葡萄糖合成糖原", "氨基酸合成蛋白質", "葡萄糖分解釋放能量", "核苷酸合成 DNA"], correct: 2, reasons: ["合成糖原是合成代謝。", "合成蛋白質是合成代謝。", "正確答案", "合成 DNA 是合成代謝。"] },
+  { topicNo: 5, q: "「鎖鑰假說」描述酶與受質的關係，以下哪項最符合？", options: ["酶與任何受質都能結合", "酶的活性位點形狀與特定受質互補", "受質會改變酶的結構", "酶會分解成受質"], correct: 1, reasons: ["酶具專一性，不能結合任何受質。", "正確答案", "鎖鑰假說強調形狀互補，不是受質改變酶。", "酶是催化劑，不會分解成受質。"] },
+  { topicNo: 5, q: "以下哪種情況會使酶永久失去活性？", options: ["降低溫度至 0°C", "把 pH 調至最適值", "增加受質濃度", "加熱至高溫使其變性"], correct: 3, reasons: ["低溫只降低活性，通常可逆。", "最適 pH 使酶活性最高，不失活。", "增加受質不使酶失活。", "正確答案"] },
+  { topicNo: 5, q: "細胞內代謝反應需要酶，因為酶能：", options: ["降低反應所需的活化能", "提高反應的溫度", "增加產物的能量", "消除反應的活化能"], correct: 0, reasons: ["正確答案", "酶不提高溫度。", "酶不增加產物能量。", "酶降低而非消除活化能。"] },
+  { topicNo: 5, q: "消化酶如胃蛋白酶在胃中工作，其最適 pH 大約是：", options: ["中性（約 7）", "強鹼性（約 12）", "強酸性（約 2）", "弱鹼性（約 8）"], correct: 2, reasons: ["胃蛋白酶在酸性環境工作。", "胃內是酸性，不是鹼性。", "正確答案", "胃內不是弱鹼性環境。"] },
+  { topicNo: 5, q: "把酶溶液的 pH 由最適值大幅調至極端值，酶活性下降，這是因為：", options: ["受質濃度下降", "酶的形狀改變（變性）", "溫度下降", "酶的數量減少"], correct: 1, reasons: ["受質濃度不因 pH 改變。", "正確答案", "pH 改變不直接等同溫度下降。", "酶數量不因 pH 改變。"] },
+  { topicNo: 5, q: "以下哪項關於酶的敘述是錯誤的？", options: ["酶能重複使用", "酶具專一性", "酶會受溫度和 pH 影響", "酶在反應中被消耗"], correct: 3, reasons: ["酶可重複使用，此敘述正確。", "酶具專一性，此敘述正確。", "酶受溫度和 pH 影響，此敘述正確。", "正確答案"] },
+  { topicNo: 5, q: "酶促反應中，初期反應速率隨溫度上升而增加，主要因為：", options: ["分子動能增加，受質與酶碰撞更頻繁", "酶的數量增加", "受質的濃度增加", "產物被移除"], correct: 0, reasons: ["正確答案", "溫度不改變酶的數量。", "受質濃度不因溫度上升而增加。", "產物移除不是初期速率上升的主因。"] },
+  { topicNo: 6, q: "以下哪種營養素每克提供最多能量？", options: ["碳水化合物", "脂質", "蛋白質", "維生素"], correct: 1, reasons: ["碳水化合物每克約 17.1 kJ，少於脂質。", "正確答案", "蛋白質每克約 17.1 kJ，少於脂質。", "維生素不提供能量。"] },
+  { topicNo: 6, q: "缺乏維生素 C 會導致甚麼疾病？", options: ["夜盲症", "佝僂病", "貧血", "壞血病"], correct: 3, reasons: ["夜盲症是缺乏維生素 A。", "佝僂病是缺乏維生素 D 或鈣。", "貧血常因缺乏鐵。", "正確答案"] },
+  { topicNo: 6, q: "以下哪種食物富含澱粉？", options: ["米飯", "雞蛋", "牛油", "芝士"], correct: 0, reasons: ["正確答案", "雞蛋富含蛋白質。", "牛油富含脂質。", "芝士富含蛋白質和脂質。"] },
+  { topicNo: 6, q: "鐵質對人體的重要功能是甚麼？", options: ["構成骨骼", "形成牙齒", "構成血紅蛋白以運輸氧氣", "調節甲狀腺功能"], correct: 2, reasons: ["構成骨骼主要靠鈣和磷。", "形成牙齒主要靠鈣和磷。", "正確答案", "調節甲狀腺功能靠碘。"] },
+  { topicNo: 6, q: "膳食纖維的主要功能是甚麼？", options: ["提供能量", "促進腸道蠕動，有助預防便秘", "合成抗體", "運輸氧氣"], correct: 1, reasons: ["人體不能消化纖維，不提供能量。", "正確答案", "抗體是蛋白質。", "運輸氧氣是紅血球功能。"] },
+  { topicNo: 6, q: "以下哪項是蛋白質對人體的主要功能？", options: ["提供即時能量", "儲存大量能量", "作為溶劑", "生長和修補身體組織"], correct: 3, reasons: ["即時能量主要由葡萄糖提供。", "大量能量儲存是脂質功能。", "水才是溶劑。", "正確答案"] },
+  { topicNo: 6, q: "夜盲症主要由缺乏哪種維生素引起？", options: ["維生素 A", "維生素 B", "維生素 C", "維生素 D"], correct: 0, reasons: ["正確答案", "維生素 B 缺乏引起腳氣病等，不是夜盲症。", "維生素 C 缺乏引起壞血病。", "維生素 D 缺乏引起佝僂病。"] },
+  { topicNo: 6, q: "以下哪項關於均衡飲食的敘述是正確的？", options: ["只吃蔬菜最健康", "只吃肉類可提供所有營養", "攝取各類食物並保持適當比例", "完全不吃脂肪最健康"], correct: 2, reasons: ["只吃蔬菜會缺乏蛋白質等營養。", "只吃肉類會缺乏維生素 C 和纖維。", "正確答案", "脂肪是人體必需的營養素，不應完全不吃。"] },
+  { topicNo: 6, q: "碘缺乏會導致甚麼問題？", options: ["壞血病", "甲狀腺腫大", "夜盲症", "骨質疏鬆"], correct: 1, reasons: ["壞血病是缺維生素 C。", "正確答案", "夜盲症是缺維生素 A。", "骨質疏鬆與鈣和維生素 D 有關。"] },
+  { topicNo: 6, q: "人體最主要的直接能源物質是甚麼？", options: ["纖維素", "維生素", "礦物質", "葡萄糖"], correct: 3, reasons: ["人體不能消化纖維素。", "維生素不提供能量。", "礦物質不提供能量。", "正確答案"] },
+  { topicNo: 6, q: "佝僂病是由缺乏哪種物質引起？", options: ["維生素 D（或鈣）", "維生素 C", "鐵", "碘"], correct: 0, reasons: ["正確答案", "維生素 C 缺乏引起壞血病。", "缺鐵引起貧血。", "缺碘引起甲狀腺腫。"] },
+  { topicNo: 6, q: "以下哪種食物是良好蛋白質來源？", options: ["蘋果", "白飯", "雞蛋", "薯仔"], correct: 2, reasons: ["蘋果主要含碳水化合物和維生素。", "白飯主要含澱粉。", "正確答案", "薯仔主要含澱粉。"] },
+  { topicNo: 6, q: "維生素 D 對人體的主要功能是甚麼？", options: ["幫助血液凝固", "促進鈣的吸收，有助骨骼健康", "合成血紅蛋白", "提供能量"], correct: 1, reasons: ["幫助凝血的是維生素 K。", "正確答案", "合成血紅蛋白需鐵。", "維生素不提供能量。"] },
+  { topicNo: 6, q: "以下哪項是「低能量」但對健康重要的食物成分？", options: ["葡萄糖", "牛油", "蔗糖", "膳食纖維"], correct: 3, reasons: ["葡萄糖提供能量。", "牛油提供大量能量。", "蔗糖提供能量。", "正確答案"] },
+  { topicNo: 6, q: "人體儲存多餘能量的主要形式是甚麼？", options: ["脂肪", "糖原", "蛋白質", "維生素"], correct: 0, reasons: ["正確答案", "糖原儲存有限，脂質是主要長期儲能形式。", "蛋白質主要用於生長修補，不是主要儲能。", "維生素不儲能。"] },
+  { topicNo: 6, q: "以下哪項缺乏會導致貧血？", options: ["鈣", "維生素 C", "鐵", "鉀"], correct: 2, reasons: ["鈣缺乏影響骨骼。", "維生素 C 缺乏引起壞血病。", "正確答案", "鉀缺乏引起肌肉問題，不是貧血。"] },
+  { topicNo: 6, q: "水對人體的重要功能不包括以下哪項？", options: ["作為代謝反應的介質", "提供大量能量", "運輸物質", "調節體溫"], correct: 1, reasons: ["水是良好溶劑，為反應提供介質。", "正確答案", "水（血漿）運輸物質。", "水透過排汗蒸發調節體溫。"] },
+  { topicNo: 6, q: "以下哪種維生素是水溶性的？", options: ["維生素 A", "維生素 D", "維生素 K", "維生素 C"], correct: 3, reasons: ["維生素 A 是脂溶性。", "維生素 D 是脂溶性。", "維生素 K 是脂溶性。", "正確答案"] },
+  { topicNo: 6, q: "食物中能量的常用單位是甚麼？", options: ["千焦耳（kJ）", "毫升（mL）", "攝氏度（°C）", "微米（μm）"], correct: 0, reasons: ["正確答案", "毫升是體積單位。", "攝氏度是溫度單位。", "微米是長度單位。"] },
+  { topicNo: 6, q: "蛋白質能量值與碳水化合物相近，約為每克：", options: ["38.9 kJ", "4.2 kJ", "17.1 kJ", "0 kJ"], correct: 2, reasons: ["38.9 kJ 是脂質的能量值。", "4.2 kJ 太低，不符合。", "正確答案", "蛋白質能提供能量，不是 0。"] },
+  { topicNo: 7, q: "澱粉在口腔中開始被哪種酶分解？", options: ["唾液澱粉酶", "胃蛋白酶", "胰脂肪酶", "麥芽糖酶"], correct: 0, reasons: ["正確答案", "胃蛋白酶分解蛋白質。", "胰脂肪酶分解脂質。", "麥芽糖酶在小腸分解麥芽糖。"] },
+  { topicNo: 7, q: "胃液中的鹽酸主要功能不包括以下哪項？", options: ["殺死隨食物進入的細菌", "提供適合胃蛋白酶的酸性環境", "分解脂肪為脂肪酸", "使蛋白質變性"], correct: 2, reasons: ["鹽酸能殺菌。", "鹽酸提供酸性環境。", "正確答案", "鹽酸可使蛋白質變性。"] },
+  { topicNo: 7, q: "膽汁的作用是甚麼？", options: ["分解蛋白質", "乳化脂肪，增加脂肪與脂肪酶的接觸面積", "分解澱粉", "吸收葡萄糖"], correct: 1, reasons: ["膽汁不含蛋白酶。", "正確答案", "膽汁不含澱粉酶。", "吸收葡萄糖在小腸絨毛進行，不是膽汁功能。"] },
+  { topicNo: 7, q: "小腸吸收營養的主要結構是甚麼？", options: ["胃壁", "食道", "大腸壁", "絨毛"], correct: 3, reasons: ["胃主要消化蛋白質，吸收很少。", "食道不吸收營養。", "大腸主要吸收水分。", "正確答案"] },
+  { topicNo: 7, q: "蛋白質在胃中首先被哪種酶分解？", options: ["胃蛋白酶", "胰蛋白酶", "澱粉酶", "脂肪酶"], correct: 0, reasons: ["正確答案", "胰蛋白酶在小腸作用。", "澱粉酶分解澱粉。", "脂肪酶分解脂質。"] },
+  { topicNo: 7, q: "胰液含有哪類酶？", options: ["只有蛋白酶", "只有脂肪酶", "蛋白酶、澱粉酶和脂肪酶", "只有澱粉酶"], correct: 2, reasons: ["胰液含多種酶，不止蛋白酶。", "胰液含多種酶，不止脂肪酶。", "正確答案", "胰液含多種酶，不止澱粉酶。"] },
+  { topicNo: 7, q: "蠕動是指甚麼？", options: ["血液在血管中流動", "消化道壁肌肉的波浪式收縮推動食物前進", "氣體在肺中交換", "食物在胃中被攪拌"], correct: 1, reasons: ["蠕動是消化道運動，不是血流。", "正確答案", "蠕動不是氣體交換。", "胃中攪拌是蠕動的一部分，但蠕動泛指沿消化道推進食物。"] },
+  { topicNo: 7, q: "葡萄糖和氨基酸主要在哪個器官被吸收進入血液？", options: ["胃", "大腸", "口腔", "小腸"], correct: 3, reasons: ["胃吸收很少。", "大腸主要吸收水分。", "口腔幾乎不吸收。", "正確答案"] },
+  { topicNo: 7, q: "絨毛的哪項特徵有助吸收？", options: ["表面積大", "壁很厚", "沒有血液供應", "表面乾燥"], correct: 0, reasons: ["正確答案", "絨毛壁薄有助吸收。", "絨毛有豐富毛細血管。", "絨毛表面濕潤有助吸收。"] },
+  { topicNo: 7, q: "牙齒中負責磨碎食物的牙齒是甚麼？", options: ["門齒", "犬齒", "臼齒", "切牙"], correct: 2, reasons: ["門齒負責切斷食物。", "犬齒負責撕裂食物。", "正確答案", "切牙即門齒，負責切斷食物。"] },
+  { topicNo: 7, q: "以下哪項是肝臟的功能？", options: ["分泌胃液", "儲存糖原並調節血糖", "吸收脂肪", "製造紅血球"], correct: 1, reasons: ["胃液由胃腺分泌。", "正確答案", "脂肪吸收在小腸。", "紅血球在骨髓製造。"] },
+  { topicNo: 7, q: "胃的主要消化功能是分解哪種營養素？", options: ["澱粉", "脂質", "維生素", "蛋白質"], correct: 3, reasons: ["澱粉主要由唾液和胰澱粉酶分解。", "脂質主要由小腸脂肪酶分解。", "維生素不需消化分解。", "正確答案"] },
+  { topicNo: 7, q: "澱粉完全消化後的最終產物是甚麼？", options: ["葡萄糖", "氨基酸", "甘油", "脂肪酸"], correct: 0, reasons: ["正確答案", "氨基酸是蛋白質的最終產物。", "甘油是脂質消化的產物。", "脂肪酸是脂質消化的產物。"] },
+  { topicNo: 7, q: "脂肪經消化後的最終產物是甚麼？", options: ["葡萄糖和果糖", "氨基酸", "甘油和脂肪酸", "核苷酸"], correct: 2, reasons: ["葡萄糖和果糖是碳水化合物產物。", "氨基酸是蛋白質產物。", "正確答案", "核苷酸是核酸產物。"] },
+  { topicNo: 7, q: "以下哪項有助小腸有效吸收脂肪的消化產物？", options: ["胃酸", "膽汁乳化脂肪", "唾液", "纖維素"], correct: 1, reasons: ["胃酸提供酸性環境，與脂肪乳化無關。", "正確答案", "唾液含澱粉酶，與脂肪無關。", "纖維素不被消化，與脂肪吸收無直接關係。"] },
+  { topicNo: 7, q: "大腸的主要功能是甚麼？", options: ["消化蛋白質", "分泌膽汁", "吸收葡萄糖", "吸收水分和形成糞便"], correct: 3, reasons: ["蛋白質在小腸消化。", "膽汁由肝分泌。", "葡萄糖在小腸吸收。", "正確答案"] },
+  { topicNo: 7, q: "以下哪項是「化學消化」的例子？", options: ["澱粉被酶分解成麥芽糖", "牙齒咀嚼食物", "胃壁攪拌食物", "膽囊儲存膽汁"], correct: 0, reasons: ["正確答案", "咀嚼是物理消化。", "攪拌是物理消化。", "儲存膽汁不是消化。"] },
+  { topicNo: 7, q: "蛋白質被完全消化後的最終產物是甚麼？", options: ["葡萄糖", "脂肪酸", "氨基酸", "甘油"], correct: 2, reasons: ["葡萄糖是碳水化合物產物。", "脂肪酸是脂質產物。", "正確答案", "甘油是脂質產物。"] },
+  { topicNo: 7, q: "胰蛋白酶在甚麼環境中活性最高？", options: ["強酸性", "弱鹼性", "強鹼性", "中性偏酸"], correct: 1, reasons: ["胰蛋白酶在小腸的弱鹼性環境工作。", "正確答案", "小腸不是強鹼性。", "小腸是弱鹼性，不是酸性。"] },
+  { topicNo: 7, q: "食物沿消化道移動主要依靠：", options: ["重力", "血液流動", "擴散", "蠕動"], correct: 3, reasons: ["重力非主要因素。", "血液流動與消化道運動無關。", "擴散是分子運動，不推動食物。", "正確答案"] },
+  { topicNo: 8, q: "氣體交換在肺部主要於哪個結構進行？", options: ["氣管", "支氣管", "肺泡", "鼻腔"], correct: 2, reasons: ["氣管只負責導氣，不進行氣體交換。", "支氣管導氣，不進行氣體交換。", "正確答案", "鼻腔負責過濾和濕潤空氣，不是交換場所。"] },
+  { topicNo: 8, q: "吸氣時，膈肌會如何？", options: ["放鬆並上升", "收縮並下降", "收縮並上升", "保持不變"], correct: 1, reasons: ["呼氣時膈肌放鬆上升。", "正確答案", "吸氣時膈肌收縮下降，不是上升。", "吸氣時膈肌會收縮。"] },
+  { topicNo: 8, q: "肺泡壁很薄，這有何重要性？", options: ["使肺泡更堅固", "防止氣體擴散", "儲存更多空氣", "縮短氣體擴散距離，加快交換"], correct: 3, reasons: ["薄壁不是為了堅固。", "薄壁有助擴散而非防止。", "儲存空氣主要靠肺泡數量和容積。", "正確答案"] },
+  { topicNo: 8, q: "氧氣在血液中主要靠甚麼運輸？", options: ["血紅蛋白", "血漿中的水", "白血球", "血小板"], correct: 0, reasons: ["正確答案", "氧氣只有少量溶於血漿。", "白血球負責防禦。", "血小板負責凝血。"] },
+  { topicNo: 8, q: "呼氣時，胸腔體積會如何變化？", options: ["增大", "不變", "減小", "先增大後不變"], correct: 2, reasons: ["呼氣時胸腔體積減小。", "呼氣時體積會變。", "正確答案", "呼氣時體積減小。"] },
+  { topicNo: 8, q: "二氧化碳從血液進入肺泡依靠甚麼過程？", options: ["主動運輸", "擴散", "滲透", "吞噬"], correct: 1, reasons: ["二氧化碳順濃度梯度擴散，不需主動運輸。", "正確答案", "滲透只涉及水分子。", "吞噬與氣體交換無關。"] },
+  { topicNo: 8, q: "肺泡表面濕潤的作用是甚麼？", options: ["殺死細菌", "提供養分", "儲存氧氣", "使氣體溶解，有助擴散"], correct: 3, reasons: ["濕潤表面不是為殺菌。", "濕潤不提供養分。", "儲氧主要靠血紅蛋白。", "正確答案"] },
+  { topicNo: 8, q: "以下哪項不是肺泡有助氣體交換的特徵？", options: ["壁厚且缺乏血液供應", "表面積大", "壁薄", "表面濕潤"], correct: 0, reasons: ["正確答案", "表面積大有利交換。", "壁薄有利交換。", "濕潤有利氣體溶解。"] },
+  { topicNo: 8, q: "呼吸作用與「呼吸」（換氣）的分別是甚麼？", options: ["兩者完全相同", "呼吸作用在肺進行", "呼吸作用是在細胞內分解食物釋放能量，呼吸是氣體交換", "呼吸作用不需要氧氣"], correct: 2, reasons: ["兩者不同。", "呼吸作用在細胞（線粒體）進行。", "正確答案", "有氧呼吸需要氧氣。"] },
+  { topicNo: 8, q: "氣管內壁的纖毛和黏液有何功能？", options: ["進行氣體交換", "捕捉塵埃及微生物並將其移走", "分泌消化酶", "製造紅血球"], correct: 1, reasons: ["氣管不進行氣體交換。", "正確答案", "氣管不分泌消化酶。", "紅血球在骨髓製造。"] },
+  { topicNo: 8, q: "肋骨間肌肉收縮時（吸氣），肋骨會如何移動？", options: ["向下向內移動", "不動", "向下向外移動", "向上向外移動"], correct: 3, reasons: ["向上向外移動是吸氣，向下向內是呼氣。", "吸氣時肋骨會移動。", "向下向外不是吸氣的正常運動。", "正確答案"] },
+  { topicNo: 8, q: "以下哪項正確描述氧氣在肺部的移動方向？", options: ["由肺泡進入血液", "由血液進入肺泡", "由組織細胞進入血液", "由血液進入組織細胞"], correct: 0, reasons: ["正確答案", "氧氣濃度肺泡高於血液，故由肺泡入血。", "肺部氧氣由肺泡入血，不是由細胞入血。", "氧氣在組織由血液入細胞，不是此處。"] },
+  { topicNo: 8, q: "呼出的空氣與吸入的空氣相比：", options: ["氧氣較多，二氧化碳較少", "兩者成分完全相同", "氧氣較少，二氧化碳較多", "只有氮氣成分不同"], correct: 2, reasons: ["呼出空氣氧氣較少、二氧化碳較多。", "兩者成分不同。", "正確答案", "氮氣成分大致相同，主要是氧和二氧化碳變化。"] },
+  { topicNo: 8, q: "以下哪項是「有氧呼吸」的產物？", options: ["葡萄糖和氧氣", "二氧化碳和水（及能量）", "乳酸", "乙醇"], correct: 1, reasons: ["葡萄糖和氧氣是反應物。", "正確答案", "乳酸是缺氧呼吸產物。", "乙醇是酵母缺氧呼吸產物。"] },
+  { topicNo: 8, q: "二氧化碳在血液中主要以哪種形式運輸？", options: ["與血紅蛋白結合為唯一形式", "溶於血漿為唯一形式", "被紅血球儲存", "大部分轉化成碳酸氫鹽離子"], correct: 3, reasons: ["與血紅蛋白結合只是其中一種方式。", "溶於血漿只是少量。", "紅血球不儲存二氧化碳。", "正確答案"] },
+  { topicNo: 8, q: "進行劇烈運動時，呼吸速率會如何變化？", options: ["加快加深", "減慢變淺", "保持不變", "停止"], correct: 0, reasons: ["正確答案", "運動時需氧增加，呼吸加快。", "運動時呼吸會改變。", "運動時不會停止呼吸。"] },
+  { topicNo: 8, q: "空氣進入肺部的正確路徑是甚麼？", options: ["鼻腔 → 支氣管 → 氣管 → 肺泡", "鼻腔 → 肺泡 → 氣管 → 支氣管", "鼻腔 → 氣管 → 支氣管 → 細支氣管 → 肺泡", "口腔 → 肺泡 → 支氣管 → 氣管"], correct: 2, reasons: ["氣管應在支氣管之前。", "肺泡是最後端，不應在中間。", "正確答案", "路徑順序錯誤。"] },
+  { topicNo: 8, q: "氧合血紅蛋白在哪裏形成？", options: ["胃", "肺部（紅血球內）", "肝", "腎"], correct: 1, reasons: ["氧合血紅蛋白在紅血球內形成，不是胃。", "正確答案", "不是肝。", "不是腎。"] },
+  { topicNo: 8, q: "以下哪項關於吸氣過程的敘述是正確的？", options: ["胸腔體積減小，壓力上升", "膈肌放鬆", "肺內氣壓高於大氣壓", "胸腔體積增大，肺內氣壓下降"], correct: 3, reasons: ["吸氣時胸腔體積增大，壓力下降。", "吸氣時膈肌收縮。", "吸氣時肺內氣壓低於大氣壓。", "正確答案"] },
+  { topicNo: 8, q: "肺部的氣體交換表面需要保持濕潤，濕潤由甚麼提供？", options: ["肺泡壁上的水分", "膽汁", "胃液", "尿液"], correct: 0, reasons: ["正確答案", "膽汁與肺無關。", "胃液與肺無關。", "尿液與肺無關。"] },
+  { topicNo: 9, q: "以下哪項是紅血球的功能？", options: ["抵禦病原體", "運輸氧氣", "凝血", "製造抗體"], correct: 1, reasons: ["抵禦病原體是白血球功能。", "正確答案", "凝血是血小板功能。", "製造抗體是淋巴細胞（白血球）功能。"] },
+  { topicNo: 9, q: "人類紅血球成熟後的特徵是甚麼？", options: ["有細胞核", "呈不規則形狀", "含大量線粒體", "無細胞核且呈雙凹形"], correct: 3, reasons: ["成熟紅血球無核。", "紅血球呈雙凹形，不是不規則。", "成熟紅血球沒有線粒體。", "正確答案"] },
+  { topicNo: 9, q: "血漿的主要功能不包括以下哪項？", options: ["運輸氧氣", "運輸溶解的養分", "運輸尿素", "運輸激素"], correct: 0, reasons: ["正確答案", "血漿運輸養分。", "血漿運輸尿素。", "血漿運輸激素。"] },
+  { topicNo: 9, q: "動脈與靜脈的其中一個分別是：", options: ["動脈有瓣膜，靜脈沒有", "動脈壁較厚且富彈性", "靜脈壁較厚且富彈性", "兩者壁厚相同"], correct: 1, reasons: ["靜脈有瓣膜，動脈沒有。", "正確答案", "靜脈壁較薄且彈性較低，動脈壁才較厚且富彈性。", "動脈壁較厚，兩者壁厚並不相同。"] },
+  { topicNo: 9, q: "心臟右心室把血液泵往哪裏？", options: ["全身", "肺部", "肝", "腎"], correct: 1, reasons: ["左心室泵血到全身。", "正確答案", "右心室不泵血到肝。", "右心室不泵血到腎。"] },
+  { topicNo: 9, q: "毛細血管適合物質交換，因為：", options: ["壁很厚", "血流很快", "沒有血液流經", "壁薄，只有一層細胞"], correct: 3, reasons: ["毛細血管壁很薄。", "毛細血管血流較慢。", "毛細血管有血液流經。", "正確答案"] },
+  { topicNo: 9, q: "以下哪項是白血球的功能？", options: ["吞噬病原體並產生抗體", "運輸二氧化碳", "運輸氧氣", "凝血"], correct: 0, reasons: ["正確答案", "二氧化碳主要由血漿和紅血球運輸。", "氧氣由紅血球運輸。", "凝血是血小板功能。"] },
+  { topicNo: 9, q: "血液凝固需要以下哪項？", options: ["紅血球", "血漿蛋白以外的物質", "血小板和凝血因子", "膽汁"], correct: 2, reasons: ["紅血球不直接參與凝血。", "凝血因子存在於血漿中。", "正確答案", "膽汁與凝血無關。"] },
+  { topicNo: 9, q: "左心室的壁比右心室厚，因為：", options: ["左心室只泵血到肺", "左心室需把血液泵往全身，距離較遠", "左心室泵血距離較短", "右心室泵血到全身"], correct: 1, reasons: ["左心室泵血到全身，不是肺。", "正確答案", "左心室泵血距離較遠，需更大力量。", "右心室泵血到肺。"] },
+  { topicNo: 9, q: "靜脈中的瓣膜有何功能？", options: ["加速血液流動", "過濾血液", "製造紅血球", "防止血液倒流"], correct: 3, reasons: ["瓣膜不加速血流。", "瓣膜不過濾血液。", "紅血球在骨髓製造。", "正確答案"] },
+  { topicNo: 9, q: "心臟的哪個腔室接收來自肺部的血液？", options: ["左心房", "右心房", "左心室", "右心室"], correct: 0, reasons: ["正確答案", "右心房接收來自全身的血液。", "左心室接收左心房的血液。", "右心室接收右心房的血液。"] },
+  { topicNo: 9, q: "體循環（大循環）中，血液由哪裏出發？", options: ["右心房", "右心室", "左心室", "左心房"], correct: 2, reasons: ["右心房接收全身血液。", "右心室泵血到肺。", "正確答案", "左心房接收肺部血液。"] },
+  { topicNo: 9, q: "以下哪項是血漿的成分？", options: ["紅血球", "水、溶解的蛋白質、葡萄糖、尿素等", "血小板", "白血球"], correct: 1, reasons: ["紅血球是血細胞，不是血漿成分。", "正確答案", "血小板是血細胞。", "白血球是血細胞。"] },
+  { topicNo: 9, q: "人體血液中數量最多的血細胞是甚麼？", options: ["白血球", "血小板", "淋巴細胞", "紅血球"], correct: 3, reasons: ["白血球數量遠少於紅血球。", "血小板數量少於紅血球。", "淋巴細胞是白血球的一種，數量少。", "正確答案"] },
+  { topicNo: 9, q: "冠狀動脈的功能是甚麼？", options: ["供應氧氣和養分給心肌", "把血液泵出心臟", "接收全身血液", "運輸尿液"], correct: 0, reasons: ["正確答案", "泵血是心室的收縮功能。", "接收全身血液是右心房。", "冠狀動脈與尿液無關。"] },
+  { topicNo: 9, q: "捐血者捐出的血液在輸血前需進行甚麼？", options: ["加熱至 37°C", "加入抗凝劑", "血型配對，確保相容", "稀釋"], correct: 2, reasons: ["加熱不是必要步驟。", "抗凝劑在儲存時使用，不是配對。", "正確答案", "稀釋不是必要步驟。"] },
+  { topicNo: 9, q: "血液循環中，氧氣含量最高的血管是甚麼？", options: ["肺動脈", "肺靜脈", "上腔靜脈", "冠狀靜脈"], correct: 1, reasons: ["肺動脈運送缺氧血到肺。", "正確答案", "上腔靜脈運送缺氧血回心。", "冠狀靜脈運送心肌產生的缺氧血。"] },
+  { topicNo: 9, q: "以下哪項是淋巴系統的功能？", options: ["製造紅血球", "泵血到全身", "進行氣體交換", "把組織液回流血液並參與免疫"], correct: 3, reasons: ["紅血球在骨髓製造。", "泵血是心臟功能。", "氣體交換在肺。", "正確答案"] },
+  { topicNo: 9, q: "心臟的搏動由哪個結構啟動？", options: ["竇房結（起搏點）", "房室結", "大腦", "肺"], correct: 0, reasons: ["正確答案", "房室結傳導訊號，但起搏由竇房結啟動。", "大腦調節心搏但不直接啟動。", "肺與心搏啟動無關。"] },
+  { topicNo: 9, q: "以下哪項關於人類血液的敘述是正確的？", options: ["血液只由紅血球組成", "血漿不含任何物質", "血液由血漿和多種血細胞組成", "血液中沒有蛋白質"], correct: 2, reasons: ["血液含血漿、紅血球、白血球和血小板。", "血漿含水分、蛋白質、葡萄糖等。", "正確答案", "血漿含血漿蛋白。"] },
+  { topicNo: 10, q: "光合作用的原料是甚麼？", options: ["二氧化碳和水", "氧氣和葡萄糖", "二氧化碳和葡萄糖", "氧氣和水"], correct: 0, reasons: ["正確答案", "氧氣和葡萄糖是產物。", "葡萄糖是產物。", "氧氣是產物。"] },
+  { topicNo: 10, q: "光合作用在哪個細胞結構進行？", options: ["線粒體", "細胞核", "葉綠體", "液泡"], correct: 2, reasons: ["線粒體進行呼吸作用。", "細胞核儲存遺傳物質。", "正確答案", "液泡儲存物質。"] },
+  { topicNo: 10, q: "光合作用的產物之一是：", options: ["二氧化碳", "葡萄糖", "水", "礦物質"], correct: 1, reasons: ["二氧化碳是原料。", "正確答案", "水是原料。", "礦物質不是光合作用產物。"] },
+  { topicNo: 10, q: "葉片中進行光合作用的主要組織是甚麼？", options: ["表皮", "木質部", "韌皮部", "葉肉組織"], correct: 3, reasons: ["表皮主要保護，不含葉綠體。", "木質部運輸水分。", "韌皮部運輸養分。", "正確答案"] },
+  { topicNo: 10, q: "氣孔的主要功能是甚麼？", options: ["進行氣體交換", "吸收礦物質", "儲存養分", "運輸水分"], correct: 0, reasons: ["正確答案", "礦物質由根吸收。", "氣孔不儲存養分。", "水分由木質部運輸。"] },
+  { topicNo: 10, q: "氣孔的開關由哪種細胞控制？", options: ["表皮細胞", "葉肉細胞", "保衛細胞", "木質部細胞"], correct: 2, reasons: ["表皮細胞不控制氣孔開關。", "葉肉細胞進行光合作用。", "正確答案", "木質部細胞運輸水分。"] },
+  { topicNo: 10, q: "以下哪種礦物質是構成葉綠素的必需元素？", options: ["鐵", "鎂", "鈣", "鈉"], correct: 1, reasons: ["鐵是血紅蛋白成分。", "正確答案", "鈣是骨骼成分。", "鈉不是葉綠素成分。"] },
+  { topicNo: 10, q: "植物缺乏氮會直接影響哪種物質的合成？", options: ["澱粉", "脂質", "葡萄糖", "蛋白質"], correct: 3, reasons: ["澱粉不含氮。", "脂質主要由碳氫氧組成。", "葡萄糖不含氮。", "正確答案"] },
+  { topicNo: 10, q: "植物在夜間會進行哪種氣體交換？", options: ["吸入氧氣，呼出二氧化碳", "吸入二氧化碳，呼出氧氣", "完全不進行氣體交換", "只吸入氮氣"], correct: 0, reasons: ["正確答案", "夜間無光，光合作用停止，主要進行呼吸作用。", "植物夜間仍進行呼吸作用。", "植物不吸入氮氣作氣體交換。"] },
+  { topicNo: 10, q: "光合作用中氧氣來自哪種物質的分解？", options: ["二氧化碳", "葡萄糖", "水", "葉綠素"], correct: 2, reasons: ["氧氣來自水的光解。", "葡萄糖是產物。", "正確答案", "葉綠素吸收光能，不分解產生氧。"] },
+  { topicNo: 10, q: "以下哪項是影響光合作用速率的因素？", options: ["土壤顏色", "光照強度", "風向", "土壤溫度"], correct: 1, reasons: ["土壤顏色不影響光合作用。", "正確答案", "風向不直接影響光合速率。", "土壤溫度影響吸水但非主要直接因素。"] },
+  { topicNo: 10, q: "葉片的上表皮通常沒有氣孔，這有助：", options: ["增加蒸騰", "加快光合作用", "吸收更多礦物質", "減少水分散失"], correct: 3, reasons: ["上表皮無氣孔是減少蒸騰。", "此與光合速率無直接關係。", "礦物質由根吸收。", "正確答案"] },
+  { topicNo: 10, q: "檢驗光合作用產生澱粉時，常用哪種試劑？", options: ["碘液", "本立德試劑", "縮二脲試劑", "石灰水"], correct: 0, reasons: ["正確答案", "本立德試劑測還原糖。", "縮二脲測蛋白質。", "石灰水測二氧化碳。"] },
+  { topicNo: 10, q: "檢驗光合作用釋放氧氣可用哪種方法？", options: ["使石灰水變渾濁", "使碘液變藍黑", "使餘燼木條重燃", "使縮二脲變紫"], correct: 2, reasons: ["石灰水變渾濁檢驗二氧化碳。", "碘液檢驗澱粉。", "正確答案", "縮二脲檢驗蛋白質。"] },
+  { topicNo: 10, q: "葉片的柵狀組織細胞：", options: ["排列疏鬆", "含大量葉綠體，是光合作用主要場所", "不含葉綠體", "主要儲存水分"], correct: 1, reasons: ["柵狀組織細胞排列緊密。", "正確答案", "柵狀組織含大量葉綠體。", "儲水是液泡功能。"] },
+  { topicNo: 10, q: "植物進行呼吸作用的場所是甚麼？", options: ["葉綠體", "細胞壁", "液泡", "線粒體"], correct: 3, reasons: ["葉綠體進行光合作用。", "細胞壁不進行呼吸。", "液泡不進行呼吸。", "正確答案"] },
+  { topicNo: 10, q: "把植物放在密封容器內並照光，容器內二氧化碳濃度會：", options: ["下降", "上升", "不變", "先升後不變"], correct: 0, reasons: ["正確答案", "光合作用消耗二氧化碳。", "光合作用會消耗二氧化碳。", "光照下光合作用消耗二氧化碳，濃度下降。"] },
+  { topicNo: 10, q: "以下哪項是「自養生物」？", options: ["真菌", "人類", "綠色植物", "昆蟲"], correct: 2, reasons: ["真菌是異養生物。", "人類是異養生物。", "正確答案", "昆蟲是異養生物。"] },
+  { topicNo: 10, q: "葉片中運輸水分和礦物質的組織是：", options: ["韌皮部", "木質部", "表皮", "海綿組織"], correct: 1, reasons: ["韌皮部運輸有機養分。", "正確答案", "表皮是保護組織。", "海綿組織進行氣體交換和部分光合作用。"] },
+  { topicNo: 10, q: "光合作用儲存於葡萄糖中的能量來自：", options: ["二氧化碳", "水", "礦物質", "光能"], correct: 3, reasons: ["二氧化碳不提供能量。", "水不提供能量。", "礦物質不提供能量。", "正確答案"] },
+  { topicNo: 11, q: "蒸騰作用是指：", options: ["植物吸收礦物質的過程", "植物進行光合作用的過程", "水分以水汽形式從植物表面（主要經氣孔）散失", "有機養分在韌皮部的運輸"], correct: 2, reasons: ["吸收礦物質由根進行。", "光合作用與蒸騰不同。", "正確答案", "有機養分運輸是轉運作用。"] },
+  { topicNo: 11, q: "蒸騰作用產生的拉力有助：", options: ["光合作用", "把水分由根拉上葉片", "吸收二氧化碳", "合成蛋白質"], correct: 1, reasons: ["蒸騰拉力與光合作用無直接關係。", "正確答案", "二氧化碳經氣孔擴散進入。", "蛋白質合成與蒸騰無關。"] },
+  { topicNo: 11, q: "水分和礦物質在植物中主要由哪種組織運輸？", options: ["韌皮部", "表皮", "葉肉", "木質部"], correct: 3, reasons: ["韌皮部運輸有機養分。", "表皮是保護組織。", "葉肉進行光合作用。", "正確答案"] },
+  { topicNo: 11, q: "有機養分（如蔗糖）在植物中由哪種組織運輸？", options: ["韌皮部", "木質部", "表皮", "保衛細胞"], correct: 0, reasons: ["正確答案", "木質部運輸水分和礦物質。", "表皮是保護組織。", "保衛細胞控制氣孔。"] },
+  { topicNo: 11, q: "以下哪項會增加蒸騰速率？", options: ["高濕度", "黑暗環境", "強風", "低溫"], correct: 2, reasons: ["高濕度降低蒸騰。", "光照使氣孔打開，黑暗降低蒸騰。", "正確答案", "低溫降低蒸騰。"] },
+  { topicNo: 11, q: "蒸騰計（potometer）用來量度：", options: ["光合作用速率", "植物吸水速率（反映蒸騰速率）", "呼吸作用速率", "植物生長速率"], correct: 1, reasons: ["蒸騰計不量度光合作用。", "正確答案", "蒸騰計不量度呼吸作用。", "蒸騰計不量度生長。"] },
+  { topicNo: 11, q: "氣孔在白天通常打開，這有助：", options: ["減少水分散失", "阻止二氧化碳進入", "儲存氧氣", "讓二氧化碳進入進行光合作用"], correct: 3, reasons: ["氣孔打開會增加蒸騰。", "氣孔打開讓二氧化碳進入。", "氣孔不儲存氧氣。", "正確答案"] },
+  { topicNo: 11, q: "木質部細胞（導管）的特徵是：", options: ["中空、無細胞質，便於水分流動", "含大量葉綠體", "壁很薄且柔軟", "能進行光合作用"], correct: 0, reasons: ["正確答案", "木質部不含葉綠體。", "木質部壁厚且有木質素。", "木質部不進行光合作用。"] },
+  { topicNo: 11, q: "以下哪項關於韌皮部的敘述是正確的？", options: ["運輸水分", "由死細胞組成", "運輸蔗糖等有機養分", "只存在於根"], correct: 2, reasons: ["木質部運輸水分。", "韌皮部由活細胞組成。", "正確答案", "韌皮部存在於根、莖、葉。"] },
+  { topicNo: 11, q: "植物莖部的支持主要靠：", options: ["韌皮部", "木質部的木質化組織", "表皮毛", "氣孔"], correct: 1, reasons: ["韌皮部主要運輸，不是支持。", "正確答案", "表皮毛不提供主要支持。", "氣孔與支持無關。"] },
+  { topicNo: 11, q: "草本植物（非木質植物）的支持部分依靠：", options: ["木質素沉積", "韌皮部增厚", "樹皮", "細胞膨壓"], correct: 3, reasons: ["草本植物木質化程度低。", "韌皮部增厚不是主要支持。", "草本植物沒有樹皮。", "正確答案"] },
+  { topicNo: 11, q: "在炎熱乾燥天氣，植物氣孔會關閉，主要後果是：", options: ["減少蒸騰，但光合作用可能減慢", "增加蒸騰", "加快礦物質吸收", "完全停止呼吸作用"], correct: 0, reasons: ["正確答案", "氣孔關閉減少蒸騰。", "氣孔關閉與礦物質吸收無直接關係。", "呼吸作用仍會繼續。"] },
+  { topicNo: 11, q: "以下哪項是蒸騰作用的好處？", options: ["增加植物體重", "有助水分和礦物質向上運輸及冷卻葉片", "儲存葡萄糖", "合成蛋白質"], correct: 1, reasons: ["蒸騰使水分散失，不增加體重。", "正確答案", "蒸騰作用不儲存葡萄糖，葡萄糖是光合作用的產物。", "蒸騰作用不合成蛋白質。"] },
+  { topicNo: 11, q: "把枝條插入染色的水中，顏色會沿哪種組織上升？", options: ["韌皮部", "木質部", "表皮", "髓"], correct: 1, reasons: ["韌皮部運輸養分。", "正確答案", "表皮不運輸水分。", "髓是儲存組織。"] },
+  { topicNo: 11, q: "影響蒸騰速率的主要環境因素不包括：", options: ["光強度", "溫度", "濕度", "土壤的顏色"], correct: 3, reasons: ["光影響氣孔開閉。", "溫度影響蒸發速率。", "濕度影響擴散梯度。", "正確答案"] },
+  { topicNo: 11, q: "根毛的主要功能是甚麼？", options: ["增加表面積以吸收水分和礦物質", "進行光合作用", "運輸蔗糖", "支持植物"], correct: 0, reasons: ["正確答案", "根毛不進行光合作用。", "根毛不運輸蔗糖。", "根毛主要吸收，不是支持。"] },
+  { topicNo: 11, q: "植物在黑暗環境中，氣孔通常：", options: ["完全張開", "永遠張開", "大部分關閉", "不變"], correct: 2, reasons: ["黑暗中無光，氣孔大多關閉。", "氣孔受光影響。", "正確答案", "黑暗中氣孔會變化。"] },
+  { topicNo: 11, q: "木質素沉積在木質部細胞壁的作用是：", options: ["使細胞柔軟", "提供強度和支持", "促進光合作用", "儲存養分"], correct: 1, reasons: ["木質素使細胞堅硬。", "正確答案", "木質素不促進光合作用。", "木質素不儲存養分。"] },
+  { topicNo: 11, q: "以下哪項關於「轉運作用」的敘述是正確的？", options: ["只運輸水分", "只在夜間進行", "只在根進行", "在韌皮部把有機養分由源運至庫"], correct: 3, reasons: ["轉運作用運輸有機養分。", "轉運作用不只在夜間。", "韌皮部遍布植物。", "正確答案"] },
+  { topicNo: 11, q: "把帶葉枝條插入蒸騰計，氣泡移動的速率可反映：", options: ["吸水速率（蒸騰速率）", "光合速率", "生長速率", "開花速率"], correct: 0, reasons: ["正確答案", "蒸騰計反映吸水速率。", "蒸騰計不反映生長。", "蒸騰計不反映開花。"] },
+  { topicNo: 12, q: "有絲分裂的主要功能是甚麼？", options: ["產生配子", "生長、修補及無性生殖", "使染色體數目減半", "產生基因多樣性"], correct: 1, reasons: ["產生配子的是減數分裂。", "正確答案", "使染色體減半的是減數分裂。", "產生基因多樣性主要靠減數分裂。"] },
+  { topicNo: 12, q: "減數分裂的結果是：", options: ["產生兩個染色體數目相同的子細胞", "產生四個染色體數目相同的子細胞", "產生兩個染色體數目減半的子細胞", "產生四個染色體數目減半的子細胞"], correct: 3, reasons: ["有絲分裂產生兩個相同子細胞。", "減數分裂產物染色體數目減半。", "減數分裂產生四個子細胞。", "正確答案"] },
+  { topicNo: 12, q: "細胞週期中的間期主要發生甚麼？", options: ["DNA 複製及細胞生長", "染色體分離", "細胞質分裂", "紡錘體消失"], correct: 0, reasons: ["正確答案", "染色體分離在後期。", "細胞質分裂在末期。", "紡錘體消失於末期。"] },
+  { topicNo: 12, q: "有絲分裂中，染色體排列在細胞中央（赤道板）發生於哪個時期？", options: ["前期", "後期", "中期", "末期"], correct: 2, reasons: ["前期染色體凝聚。", "後期染色體分離。", "正確答案", "末期核膜重現。"] },
+  { topicNo: 12, q: "有絲分裂中，姊妹染色單體分離並移向兩極發生於哪個時期？", options: ["中期", "後期", "前期", "間期"], correct: 1, reasons: ["中期染色體排列中央。", "正確答案", "前期染色體凝聚。", "間期 DNA 複製。"] },
+  { topicNo: 12, q: "人類體細胞有多少條染色體？", options: ["23", "48", "22", "46"], correct: 3, reasons: ["23 是配子的染色體數目。", "48 不是人類染色體數目。", "22 是常染色體對數，不是總數。", "正確答案"] },
+  { topicNo: 12, q: "人類配子（精子或卵子）有多少條染色體？", options: ["23", "46", "44", "12"], correct: 0, reasons: ["正確答案", "46 是體細胞數目。", "44 是常染色體數目，不是配子數目。", "12 錯誤。"] },
+  { topicNo: 12, q: "二倍體（2n）細胞與單倍體（n）細胞的分別是：", options: ["二倍體細胞染色體數目較少", "兩者染色體數目相同", "二倍體細胞有兩套染色體，單倍體只有一套", "單倍體細胞有兩套染色體"], correct: 2, reasons: ["二倍體染色體較多。", "兩者數目不同。", "正確答案", "二倍體才有兩套。"] },
+  { topicNo: 12, q: "有絲分裂與減數分裂的其中一個重要分別是：", options: ["有絲分裂使染色體數目減半", "減數分裂使染色體數目減半，有絲分裂保持不變", "兩者都使染色體數目減半", "兩者都只發生一次分裂"], correct: 1, reasons: ["有絲分裂保持染色體數目不變。", "正確答案", "只有減數分裂減半。", "減數分裂涉及兩次連續分裂。"] },
+  { topicNo: 12, q: "減數分裂對有性生殖的重要性在於：", options: ["增加體細胞數目", "使子代與親代完全相同", "產生更多體細胞", "使配子染色體數目減半，受精後恢復原有數目"], correct: 3, reasons: ["增加體細胞是有絲分裂。", "減數分裂增加變異。", "減數分裂產生配子而非體細胞。", "正確答案"] },
+  { topicNo: 12, q: "細胞質分裂通常發生於哪個時期之後？", options: ["末期", "間期", "前期", "中期"], correct: 0, reasons: ["正確答案", "間期先於分裂。", "前期在中期之前。", "中期在後期之前。"] },
+  { topicNo: 12, q: "有絲分裂產生的兩個子細胞：", options: ["染色體數目減半", "遺傳上完全不同", "遺傳上與母細胞相同", "只有一套染色體"], correct: 2, reasons: ["有絲分裂保持染色體數目。", "有絲分裂子細胞遺傳相同。", "正確答案", "有絲分裂子細胞是二倍體。"] },
+  { topicNo: 12, q: "癌症與細胞分裂失調有關，其特徵是：", options: ["細胞分裂減慢", "細胞不受控制地分裂", "細胞不再分裂", "細胞染色體消失"], correct: 1, reasons: ["癌細胞分裂加快。", "正確答案", "癌細胞會持續分裂。", "癌細胞仍有染色體。"] },
+  { topicNo: 12, q: "有絲分裂中，紡錘體形成於哪個時期？", options: ["間期", "中期", "末期", "前期"], correct: 3, reasons: ["間期主要複製 DNA。", "中期紡錘體已存在。", "末期紡錘體消失。", "正確答案"] },
+  { topicNo: 12, q: "以下哪項是減數分裂獨有的現象？", options: ["同源染色體配對", "染色體複製", "細胞質分裂", "紡錘體形成"], correct: 0, reasons: ["正確答案", "有絲分裂也有染色體複製。", "有絲分裂也有細胞質分裂。", "有絲分裂也形成紡錘體。"] },
+  { topicNo: 12, q: "無性生殖的後代：", options: ["與親代基因完全不同", "基因多樣性高", "與親代基因相同", "染色體數目減半"], correct: 2, reasons: ["無性生殖後代與親代相同。", "無性生殖不增加基因多樣性。", "正確答案", "無性生殖染色體數目不變。"] },
+  { topicNo: 12, q: "根尖適合觀察細胞分裂，因為：", options: ["根尖不含細胞", "根尖細胞分裂活躍", "根尖細胞已死亡", "根尖沒有染色體"], correct: 1, reasons: ["根尖含大量細胞。", "正確答案", "根尖細胞是活的且分裂活躍。", "根尖細胞有染色體。"] },
+  { topicNo: 12, q: "染色體複製發生於：", options: ["前期", "中期", "後期", "間期"], correct: 3, reasons: ["前期染色體已複製。", "中期染色體已複製。", "後期染色體已複製。", "正確答案"] },
+  { topicNo: 12, q: "一對同源染色體：", options: ["分別來自父方和母方，形狀大小相似", "完全由父方提供", "完全由母方提供", "只有一條染色體"], correct: 0, reasons: ["正確答案", "同源染色體一條來自父方、一條來自母方。", "同源染色體一條來自父方、一條來自母方。", "同源染色體是一對。"] },
+  { topicNo: 12, q: "受精作用使合子的染色體數目：", options: ["減半", "不變", "恢復為二倍體數目", "變為單倍體"], correct: 2, reasons: ["受精使染色體數目增加。", "受精使染色體數目恢復。", "正確答案", "受精後是二倍體。"] },
+  { topicNo: 13, q: "花的雄性生殖器官是甚麼？", options: ["雄蕊", "雌蕊", "花瓣", "萼片"], correct: 0, reasons: ["正確答案", "雌蕊是雌性生殖器官。", "花瓣吸引傳粉者。", "萼片保護花蕾。"] },
+  { topicNo: 13, q: "花粉粒由花的哪個部分產生？", options: ["柱頭", "子房", "花藥", "花柱"], correct: 2, reasons: ["柱頭接收花粉。", "子房含胚珠。", "正確答案", "花柱連接柱頭和子房。"] },
+  { topicNo: 13, q: "傳粉是指：", options: ["花粉管到達胚珠", "花粉粒由花藥傳到柱頭", "胚珠受精", "種子散播"], correct: 1, reasons: ["花粉管到達胚珠是傳粉後的過程。", "正確答案", "受精在傳粉後發生。", "種子散播在受精後。"] },
+  { topicNo: 13, q: "蟲媒花通常具有甚麼特徵？", options: ["花粉輕而多", "花瓣小且不顯眼", "沒有花蜜", "顏色鮮艷並有花蜜"], correct: 3, reasons: ["輕而多的花粉是風媒花特徵。", "蟲媒花花瓣大而顯眼。", "蟲媒花通常有花蜜。", "正確答案"] },
+  { topicNo: 13, q: "風媒花通常具有甚麼特徵？", options: ["花粉輕而乾燥、數量多", "花瓣大而鮮艷", "有濃郁香味", "花蜜豐富"], correct: 0, reasons: ["正確答案", "風媒花花瓣小。", "風媒花通常無香味。", "風媒花通常無花蜜。"] },
+  { topicNo: 13, q: "受精後，子房發育成甚麼？", options: ["種子", "花瓣", "果實", "花粉"], correct: 2, reasons: ["胚珠發育成種子。", "花瓣通常凋謝。", "正確答案", "花粉與子房發育無關。"] },
+  { topicNo: 13, q: "受精後，胚珠發育成甚麼？", options: ["果實", "種子", "果皮", "花瓣"], correct: 1, reasons: ["子房發育成果實。", "正確答案", "子房壁發育成果皮。", "花瓣凋謝。"] },
+  { topicNo: 13, q: "種子的主要部分不包括以下哪項？", options: ["胚", "種皮", "胚乳", "花藥"], correct: 3, reasons: ["胚是種子的重要部分。", "種皮保護種子。", "胚乳儲存養分。", "正確答案"] },
+  { topicNo: 13, q: "種子發芽所需的條件是：", options: ["水、氧氣和適宜溫度", "光、二氧化碳和高溫", "只有水", "只有氧氣"], correct: 0, reasons: ["正確答案", "二氧化碳不是發芽所需。", "發芽需多個條件。", "發芽需多個條件。"] },
+  { topicNo: 13, q: "雙受精是甚麼？", options: ["兩粒花粉同時到達柱頭", "兩個卵細胞受精", "一個雄配子與卵結合，另一個與極核結合", "兩個子房同時發育"], correct: 2, reasons: ["雙受精不是兩粒花粉。", "只有一個卵細胞受精。", "正確答案", "雙受精不涉及兩個子房。"] },
+  { topicNo: 13, q: "花粉管的作用是：", options: ["吸引昆蟲", "把雄配子輸送到胚珠", "產生花蜜", "保護花蕾"], correct: 1, reasons: ["吸引昆蟲是花瓣和花蜜。", "正確答案", "產生花蜜是蜜腺。", "保護花蕾是萼片。"] },
+  { topicNo: 13, q: "以下哪項是藉動物散播的種子特徵？", options: ["輕而有翅", "表面光滑無附屬物", "乾燥且輕", "有鈎或果實多汁"], correct: 3, reasons: ["輕而有翅是風力散播。", "動物散播的種子常有附屬物。", "乾燥輕是風力散播。", "正確答案"] },
+  { topicNo: 13, q: "藉風力散播的種子通常：", options: ["輕且可能帶翅或毛", "重且大", "有鈎", "多汁"], correct: 0, reasons: ["正確答案", "重而大不利風力散播。", "有鈎是動物散播特徵。", "多汁是動物散播特徵。"] },
+  { topicNo: 13, q: "果實的主要功能是：", options: ["產生花粉", "進行光合作用", "保護種子並協助散播", "吸收礦物質"], correct: 2, reasons: ["花粉由花藥產生。", "果實一般不進行光合作用。", "正確答案", "吸收礦物質是根的功能。"] },
+  { topicNo: 13, q: "以下哪項是無性生殖的例子？", options: ["種子發芽", "馬鈴薯塊莖萌發新植株", "花粉受精", "果實成熟"], correct: 1, reasons: ["種子發芽是有性生殖的結果。", "正確答案", "受精是有性生殖過程。", "果實成熟是有性生殖過程的一部分。"] },
+  { topicNo: 13, q: "無性生殖的優點之一是：", options: ["產生基因多樣性", "需要傳粉", "產生種子", "能快速繁殖大量與親代相同的後代"], correct: 3, reasons: ["無性生殖不產生基因多樣性。", "無性生殖不需傳粉。", "無性生殖不產生種子。", "正確答案"] },
+  { topicNo: 13, q: "柱頭的作用是：", options: ["接收花粉粒", "產生花粉", "保護胚珠", "儲存養分"], correct: 0, reasons: ["正確答案", "花藥產生花粉。", "子房保護胚珠。", "胚乳儲存養分。"] },
+  { topicNo: 13, q: "種子休眠的好處是：", options: ["加快發芽", "增加水分散失", "使種子在不利環境下存活，待條件適合才發芽", "使種子立即死亡"], correct: 2, reasons: ["休眠延遲發芽。", "休眠不是增加水分散失。", "正確答案", "休眠是存活策略，不是死亡。"] },
+  { topicNo: 13, q: "在種子發芽初期，幼苗的養分主要來自：", options: ["光合作用", "種子內的儲存養分（子葉或胚乳）", "土壤中的肥料", "空氣中的二氧化碳"], correct: 1, reasons: ["發芽初期葉未長出，不能光合作用。", "正確答案", "初期不靠土壤肥料。", "二氧化碳不是養分來源。"] },
+  { topicNo: 13, q: "以下哪項正確描述自花傳粉？", options: ["花粉從一朵花傳到另一植株的花", "花粉從花藥傳到另一朵花的柱頭", "花粉由昆蟲傳播", "花粉從花藥傳到同一朵花（或同一植株的花）的柱頭"], correct: 3, reasons: ["那是異花傳粉。", "那也是異花傳粉。", "昆蟲傳播可能是異花傳粉。", "正確答案"] }
+];
+
+</script>
+  <script>
+const QB2 = [
+  { topicNo: 14, q: "男性生殖系統中，產生精子及分泌睾酮的器官是甚麼？", options: ["睪丸", "附睾", "前列腺", "輸精管"], correct: 0, reasons: ["正確答案", "附睾負責暫時儲存精子及讓精子成熟，不產生精子。", "前列腺分泌液體作為精液的成分，不產生精子。", "輸精管負責運送精子，不產生精子。"] },
+  { topicNo: 14, q: "女性生殖系統中，受精作用通常在哪裏發生？", options: ["卵巢", "陰道", "輸卵管", "子宮"], correct: 2, reasons: ["卵巢釋放卵子，但受精不在卵巢內進行。", "陰道是精子進入及分娩的通道，受精不在陰道內。", "正確答案", "子宮是胚胎著床及發育的地方，受精在其上游的輸卵管發生。"] },
+  { topicNo: 14, q: "人類成熟的精子與卵子各含有多少條染色體？", options: ["46 條", "23 條", "23 對", "92 條"], correct: 1, reasons: ["46 條是體細胞的染色體數目。", "正確答案", "23 對即 46 條，是體細胞的數目，配子只有 23 條。", "92 條是體細胞數目的兩倍，不正確。"] },
+  { topicNo: 14, q: "月經週期（以 28 天計）中，排卵通常發生在週期的大約第幾天？", options: ["第 1 天", "第 28 天", "第 7 天", "第 14 天"], correct: 3, reasons: ["第 1 天是月經來潮的開始。", "第 28 天是週期末，通常子宮內膜即將脫落。", "第 7 天左右是卵泡發育早期，尚未排卵。", "正確答案"] },
+  { topicNo: 14, q: "月經週期中，促使子宮內膜增厚的主要激素是？", options: ["黃體酮", "睾酮", "雌激素", "胰島素"], correct: 2, reasons: ["黃體酮主要在排卵後維持子宮內膜。", "睾酮是男性激素，與子宮內膜增厚無關。", "正確答案", "胰島素調節血糖，與月經週期無關。"] },
+  { topicNo: 14, q: "睾酮在人體中的主要功能是甚麼？", options: ["促進男性第二性徵的發育", "刺激卵泡發育", "促進子宮內膜脫落", "刺激乳汁分泌"], correct: 0, reasons: ["正確答案", "刺激卵泡發育的是卵泡刺激素（FSH）。", "子宮內膜脫落由雌激素和黃體酮水平下降引起。", "催乳素刺激乳汁分泌。"] },
+  { topicNo: 14, q: "胎兒在母體子宮內獲得營養和氧氣、排出廢物的結構是？", options: ["臍帶", "羊膜", "羊水", "胎盤"], correct: 3, reasons: ["臍帶連接胎兒與胎盤，負責運送物質，但交換場所是胎盤。", "羊膜包圍胎兒形成羊膜囊，不是交換場所。", "羊水有保護作用，不是交換場所。", "正確答案"] },
+  { topicNo: 14, q: "臍帶中把含氧血液從胎盤送往胎兒的血管是？", options: ["臍動脈", "臍靜脈", "肺動脈", "主動脈"], correct: 1, reasons: ["臍動脈把胎兒的缺氧血液送往胎盤。", "正確答案", "肺動脈屬胎兒自身循環，與臍帶無關。", "主動脈把含氧血液送往身體各處，與臍帶無關。"] },
+  { topicNo: 14, q: "胎盤的重要特點是？", options: ["母體血液與胎兒血液直接混合", "母體血液與胎兒血液之間沒有物質交換", "母體血液與胎兒血液隔著一層薄膜進行物質交換", "胎盤只負責氣體交換"], correct: 2, reasons: ["母體血液與胎兒血液不會直接混合，否則可能引起免疫反應。", "胎盤正是物質交換的場所，氧、養分和廢物都經此交換。", "正確答案", "胎盤除氣體外，還交換養分、抗體及代謝廢物。"] },
+  { topicNo: 14, q: "青春期女性出現的第二性徵主要由哪種激素引起？", options: ["雌激素", "黃體酮", "睾酮", "胰島素"], correct: 0, reasons: ["正確答案", "黃體酮主要參與月經週期和維持懷孕。", "睾酮主要引起男性第二性徵。", "胰島素調節血糖，與性徵無關。"] },
+  { topicNo: 14, q: "口服避孕藥的主要原理是？", options: ["殺死子宮內的精子", "防止胚胎在子宮著床", "直接殺死卵子", "抑制排卵"], correct: 3, reasons: ["口服避孕藥不含殺精成分。", "抑制排卵使沒有卵子受精，而非直接阻止著床。", "避孕藥不直接殺死卵子。", "正確答案"] },
+  { topicNo: 14, q: "排卵後，卵巢內殘留的卵泡轉變成黃體，黃體主要分泌？", options: ["雌激素和 FSH", "黃體酮", "睾酮", "胰島素"], correct: 1, reasons: ["黃體主要分泌黃體酮，FSH 由腦下垂體分泌。", "正確答案", "睾酮由睪丸分泌。", "胰島素由胰臟分泌。"] },
+  { topicNo: 14, q: "男性生殖系統中，精子暫時儲存並完成成熟的部位是？", options: ["睪丸", "前列腺", "附睾", "尿道"], correct: 2, reasons: ["睪丸產生精子，但儲存和成熟主要在附睾。", "前列腺分泌液體，不儲存精子。", "正確答案", "尿道是精液和尿液排出的通道。"] },
+  { topicNo: 14, q: "以下哪項是男性青春期出現的第二性徵？", options: ["聲線變得低沉", "骨盆變寬", "乳房發育", "月經來潮"], correct: 0, reasons: ["正確答案", "骨盆變寬是女性第二性徵。", "乳房發育是女性第二性徵。", "月經來潮是女性生殖成熟的表現。"] },
+  { topicNo: 14, q: "卵子由卵巢釋放後，主要依靠甚麼被送往子宮？", options: ["卵子自身的鞭毛運動", "輸卵管的纖毛擺動和管壁蠕動", "子宮的收縮", "陰道的負壓"], correct: 1, reasons: ["人類卵子沒有鞭毛，不能自行移動。", "正確答案", "卵子先在輸卵管內移動，子宮收縮不是主要機制。", "陰道不參與運送卵子。"] },
+  { topicNo: 14, q: "以下哪種疾病主要透過性接觸傳播？", options: ["霍亂", "瘧疾", "肺結核", "淋病"], correct: 3, reasons: ["霍亂主要經受污染的食物和水傳播。", "瘧疾經蚊子叮咬傳播。", "肺結核主要經飛沫傳播。", "正確答案"] },
+  { topicNo: 14, q: "受精後，胚胎著床（植入）的位置是？", options: ["子宮內膜", "輸卵管壁", "卵巢表面", "陰道壁"], correct: 0, reasons: ["正確答案", "胚胎在輸卵管受精後移至子宮著床，不在輸卵管壁著床。", "卵巢只釋放卵子，不是著床位置。", "陰道不是著床位置。"] },
+  { topicNo: 14, q: "月經週期中，子宮內膜脫落並隨血液排出，發生在？", options: ["排卵期", "增殖期", "月經期", "分泌期"], correct: 2, reasons: ["排卵期是卵巢釋放卵子的階段。", "增殖期子宮內膜正在增厚。", "正確答案", "分泌期子宮內膜增厚並分泌，準備懷孕。"] },
+  { topicNo: 14, q: "腦下垂體分泌、刺激卵巢內卵泡發育的激素是？", options: ["黃體酮", "卵泡刺激素（FSH）", "睾酮", "催乳素"], correct: 1, reasons: ["黃體酮由黃體分泌，維持子宮內膜。", "正確答案", "睾酮由睪丸分泌。", "催乳素刺激乳汁分泌。"] },
+  { topicNo: 14, q: "胎兒出生時，哪個結構會在嬰兒出生後被剪斷？", options: ["胎盤", "羊膜", "輸卵管", "臍帶"], correct: 3, reasons: ["胎盤在分娩後會隨子宮收縮排出。", "羊膜在分娩時破裂。", "輸卵管屬母體結構，與胎兒無直接連接。", "正確答案"] },
+  { topicNo: 15, q: "量度植物生長最準確的方法是？", options: ["量度乾質量", "量度鮮質量", "量度高度", "量度葉片數目"], correct: 0, reasons: ["正確答案", "鮮質量受含水量變化影響，不能準確反映有機物增長。", "高度只反映其中一方面的生長。", "葉片數目不能準確反映整體生長。"] },
+  { topicNo: 15, q: "種子萌發時，胚根首先長出的主要功能是？", options: ["進行光合作用", "儲存養分", "吸收水分並固定植物", "產生種子"], correct: 2, reasons: ["胚根不含葉綠素，不能進行光合作用。", "儲存養分主要是子葉或胚乳的功能。", "正確答案", "胚根不會產生種子。"] },
+  { topicNo: 15, q: "以下哪項是「發育」而非單純「生長」的例子？", options: ["植物整體體積增大", "細胞特化成不同類型以發揮不同功能", "體重增加", "細胞數目增加"], correct: 1, reasons: ["體積增大主要屬生長。", "正確答案", "體重增加主要屬生長。", "細胞數目增加屬生長。"] },
+  { topicNo: 15, q: "植物的初生生長（莖和根伸長）主要發生在？", options: ["木栓形成層", "維管形成層", "整段莖的成熟區", "頂端分生組織"], correct: 3, reasons: ["木栓形成層產生木栓，與伸長無關。", "維管形成層使莖增粗，屬次生生長。", "成熟區的細胞已停止伸長。", "正確答案"] },
+  { topicNo: 15, q: "種子萌發的必要條件不包括以下哪項？", options: ["水分", "氧氣", "光線", "適宜溫度"], correct: 2, reasons: ["水分是萌發的必要條件。", "氧氣供呼吸作用之用，是必要條件。", "正確答案", "適宜溫度使酶能正常運作，是必要條件。"] },
+  { topicNo: 15, q: "以下哪項是「生長」最準確的定義？", options: ["生物體積或乾質量不可逆地增加", "細胞特化成不同類型", "生物獲得新功能", "生物由幼體變為成體"], correct: 0, reasons: ["正確答案", "細胞特化屬於發育。", "獲得新功能屬發育。", "由幼體變為成體主要屬發育過程。"] },
+  { topicNo: 15, q: "完全變態昆蟲（如蝴蝶）的生命史正確順序是？", options: ["卵 → 幼蟲 → 成蟲", "卵 → 蛹 → 幼蟲 → 成蟲", "卵 → 成蟲 → 幼蟲", "卵 → 幼蟲 → 蛹 → 成蟲"], correct: 3, reasons: ["缺少蛹期。", "蛹期應在幼蟲期之後。", "順序完全錯誤。", "正確答案"] },
+  { topicNo: 15, q: "種子萌發時，儲存的澱粉被分解成甚麼以提供能量？", options: ["氨基酸", "葡萄糖", "脂肪酸", "甘油"], correct: 1, reasons: ["氨基酸來自蛋白質分解，不是澱粉。", "正確答案", "脂肪酸來自脂質分解。", "甘油來自脂質分解。"] },
+  { topicNo: 15, q: "量度乾質量時，正確的做法是？", options: ["直接把新鮮樣本放上電子秤", "量度樣本的體積", "把樣本烘乾至恆重後量度", "量度樣本的含水量"], correct: 2, reasons: ["新鮮樣本含有水分，屬鮮質量。", "體積不能反映有機物含量。", "正確答案", "含水量不是乾質量。"] },
+  { topicNo: 15, q: "植物莖部增粗（次生生長）主要由哪種組織引起？", options: ["維管形成層", "頂端分生組織", "根冠", "表皮"], correct: 0, reasons: ["正確答案", "頂端分生組織負責伸長（初生生長）。", "根冠保護根尖，不引起增粗。", "表皮是保護組織。"] },
+  { topicNo: 15, q: "植物向光性主要由哪種激素引起？", options: ["乙烯", "細胞分裂素", "脫落酸", "生長素"], correct: 3, reasons: ["乙烯主要促進果實成熟。", "細胞分裂素主要促進細胞分裂。", "脫落酸主要抑制生長、促進休眠。", "正確答案"] },
+  { topicNo: 15, q: "昆蟲需要定期脫皮，主要原因是？", options: ["外骨骼會被雨水溶解", "外骨骼不能隨身體長大", "外骨骼太柔軟", "外骨骼會自行脫落再生"], correct: 1, reasons: ["外骨骼主要由幾丁質組成，不會被雨水溶解。", "正確答案", "昆蟲外骨骼堅硬，不是太柔軟。", "外骨骼不會無故自行脫落，需主動蛻皮。"] },
+  { topicNo: 15, q: "S 型生長曲線中，最初生長緩慢的階段稱為？", options: ["對數生長期", "靜止期", "遲滯期", "死亡期"], correct: 2, reasons: ["對數生長期是快速生長的階段。", "靜止期是生長幾乎停止的階段。", "正確答案", "S 型生長曲線中一般不以死亡期描述。"] },
+  { topicNo: 15, q: "人類的青春期會出現以下哪項變化？", options: ["身高快速增長（生長突增）", "身高完全停止增長", "骨骼停止發育", "細胞不再分裂"], correct: 0, reasons: ["正確答案", "青春期身高會快速增長，之後才漸趨停止。", "青春期骨骼仍在發育。", "青春期細胞仍會分裂以支持生長。"] },
+  { topicNo: 15, q: "以下哪項因素屬於影響植物生長的內在因素？", options: ["光照強度", "植物激素", "水分供應", "土壤溫度"], correct: 1, reasons: ["光照屬外在環境因素。", "正確答案", "水分屬外在環境因素。", "溫度屬外在環境因素。"] },
+  { topicNo: 15, q: "種子萌發時，最先突破種皮的結構通常是？", options: ["子葉", "胚芽", "胚軸", "胚根"], correct: 3, reasons: ["子葉一般留在種子內或稍後出土。", "胚芽在胚根之後長出。", "胚軸在胚根之後伸長。", "正確答案"] },
+  { topicNo: 15, q: "以下哪項最能說明「發育」的含義？", options: ["生物體在結構和功能上逐漸複雜化", "生物體重量增加", "生物體細胞數目增加", "生物體吸收更多水分"], correct: 0, reasons: ["正確答案", "重量增加主要屬生長。", "細胞數目增加主要屬生長。", "吸收水分不是發育。"] },
+  { topicNo: 15, q: "植物根表現出正向地性，這表示根會？", options: ["向著光源生長", "背離重力方向生長", "順著重力方向向下生長", "不受重力影響"], correct: 2, reasons: ["向光生長是向光性，不是向地性。", "背離重力是負向地性，是莖的表現。", "正確答案", "根會受重力影響，表現正向地性。"] },
+  { topicNo: 15, q: "以下哪項關於「生長」與「發育」的敘述正確？", options: ["兩者完全相同", "生長是量變，發育是質變", "發育是量變，生長是質變", "兩者都只與體積有關"], correct: 1, reasons: ["兩者含義不同，生長偏重量變，發育偏重質變。", "正確答案", "發育偏重質變，生長偏重量變。", "發育還涉及結構和功能的改變。"] },
+  { topicNo: 15, q: "幼苗出土後，胚芽會發育成？", options: ["根", "子葉", "種皮", "莖和葉"], correct: 3, reasons: ["根由胚根發育而成。", "子葉由種子原有的子葉發育。", "種皮不發育成莖葉。", "正確答案"] },
+  { topicNo: 16, q: "看不同距離物體時，眼睛透過改變哪個結構的形狀來調節焦點？", options: ["晶狀體", "虹膜", "角膜", "視網膜"], correct: 0, reasons: ["正確答案", "虹膜控制瞳孔大小，不負責調焦。", "角膜主要提供固定的折射力，調焦靠晶狀體改變形狀。", "視網膜是感光位置，不負責調焦。"] },
+  { topicNo: 16, q: "眼睛的光感受細胞位於？", options: ["角膜", "晶狀體", "視網膜", "脈絡膜"], correct: 2, reasons: ["角膜是透明保護層，不含光感受細胞。", "晶狀體負責折射光線。", "正確答案", "脈絡膜含血管供血，不含光感受細胞。"] },
+  { topicNo: 16, q: "看近物時，眼睛的調節（調視）包括？", options: ["睫狀肌鬆弛，晶狀體變薄", "睫狀肌收縮，晶狀體變厚", "瞳孔放大", "晶狀體不改變形狀"], correct: 1, reasons: ["看近物時睫狀肌收縮，晶狀體變厚。", "正確答案", "看近物時瞳孔通常縮小。", "看近物時晶狀體必須變厚以增加折射。"] },
+  { topicNo: 16, q: "視桿細胞的主要功能是？", options: ["在強光下分辨顏色", "分辨細微顏色差異", "產生清晰彩色影像", "在弱光下感光（黑白視覺）"], correct: 3, reasons: ["分辨顏色是視錐細胞的功能。", "分辨顏色是視錐細胞的功能。", "彩色視覺由視錐細胞負責。", "正確答案"] },
+  { topicNo: 16, q: "視錐細胞的主要功能是？", options: ["在黑暗中感光", "感受光暗變化", "在強光下分辨顏色", "保護視網膜"], correct: 2, reasons: ["黑暗中感光主要由視桿細胞負責。", "感受光暗主要靠視桿細胞。", "正確答案", "視錐細胞是感光細胞，不是保護結構。"] },
+  { topicNo: 16, q: "耳朵中把聲波振動轉為神經脈衝的結構是？", options: ["耳蝸", "鼓膜", "聽小骨", "耳咽管"], correct: 0, reasons: ["正確答案", "鼓膜把聲波轉為振動，再由聽小骨傳遞。", "聽小骨放大並傳遞振動，不產生神經脈衝。", "耳咽管平衡鼓膜兩側氣壓。"] },
+  { topicNo: 16, q: "中耳的聽小骨的功能是？", options: ["產生聲波", "感受聲音", "分泌耳垢", "放大振動並傳遞至卵圓窗"], correct: 3, reasons: ["聲波來自外界，聽小骨不產生聲波。", "感受聲音的是耳蝸。", "耳垢由外耳道分泌。", "正確答案"] },
+  { topicNo: 16, q: "人體感受頭部轉動和身體平衡的結構是？", options: ["耳蝸", "半規管", "鼓膜", "耳咽管"], correct: 1, reasons: ["耳蝸負責聽覺。", "正確答案", "鼓膜負責接收聲波振動。", "耳咽管平衡氣壓。"] },
+  { topicNo: 16, q: "皮膚中不存在以下哪類感受器？", options: ["觸覺感受器", "痛覺感受器", "光感受器", "溫度感受器"], correct: 2, reasons: ["皮膚有觸覺感受器。", "皮膚有痛覺感受器。", "正確答案", "皮膚有溫度感受器（冷、熱）。"] },
+  { topicNo: 16, q: "植物的根受重力影響表現出？", options: ["正向地性", "負向地性", "正向光性", "負向光性"], correct: 0, reasons: ["正確答案", "根向地心生長，是正向地性。", "向光性是莖的特性，根一般不受光影響而生長。", "根不表現明顯向光性。"] },
+  { topicNo: 16, q: "植物的莖受單側光照射時會表現？", options: ["正向地性", "背離光線生長", "不受影響", "向著光線生長（正向光性）"], correct: 3, reasons: ["向地性是對重力的反應。", "莖會向光生長，不是背離光線。", "莖會表現向光性。", "正確答案"] },
+  { topicNo: 16, q: "反射動作的其中一個特點是？", options: ["必須先經大腦思考", "反應迅速且不自覺", "可以隨意控制", "必須由意識啟動"], correct: 1, reasons: ["反射動作通常不經大腦思考。", "正確答案", "反射動作是不自覺的，不能隨意控制。", "反射動作不需意識啟動。"] },
+  { topicNo: 16, q: "感受器在神經系統中的功能是？", options: ["把神經脈衝轉為刺激", "直接引起肌肉收縮", "把刺激轉為神經脈衝", "傳遞訊息到大腦"], correct: 2, reasons: ["感受器是把刺激轉為脈衝，方向相反。", "引起肌肉收縮的是效應器。", "正確答案", "傳遞訊息是神經元的功能。"] },
+  { topicNo: 16, q: "強光下，眼睛的瞳孔會？", options: ["縮小", "放大", "不變", "變成紅色"], correct: 0, reasons: ["正確答案", "強光下瞳孔縮小以減少入光量。", "瞳孔大小會隨光強調節。", "瞳孔不會變成紅色。"] },
+  { topicNo: 16, q: "視覺最終在哪裏形成？", options: ["視網膜", "大腦的視覺中樞", "晶狀體", "視神經"], correct: 1, reasons: ["視網膜只把光轉為脈衝。", "正確答案", "晶狀體只負責折射。", "視神經負責傳遞脈衝到大腦。"] },
+  { topicNo: 16, q: "近視（近視眼）的成因是？", options: ["眼球過短，影像聚焦在視網膜後", "晶狀體過薄", "角膜完全平坦", "眼球過長或晶狀體過凸，影像聚焦在視網膜前"], correct: 3, reasons: ["眼球過短會導致遠視。", "晶狀體過薄會導致遠視。", "角膜平坦不是近視成因。", "正確答案"] },
+  { topicNo: 16, q: "近視可用哪種鏡片矯正？", options: ["凹透鏡", "凸透鏡", "平面鏡", "三稜鏡"], correct: 0, reasons: ["正確答案", "凸透鏡用於矯正遠視。", "平面鏡不改變光線會聚。", "三稜鏡不用於矯正近視。"] },
+  { topicNo: 16, q: "耳咽管（咽鼓管）的功能是？", options: ["傳遞聲波", "產生耳垢", "平衡鼓膜兩側的氣壓", "感受身體平衡"], correct: 2, reasons: ["傳遞聲波的是聽小骨。", "耳垢由外耳道分泌。", "正確答案", "感受平衡的是半規管。"] },
+  { topicNo: 16, q: "以下哪項正確描述植物的「向性」？", options: ["方向與刺激方向無關", "生長方向由刺激方向決定", "只對光產生反應", "是快速的運動"], correct: 1, reasons: ["向性的方向正取決於刺激方向。", "正確答案", "向性包括向光性、向地性等，不只對光。", "向性是緩慢的生長反應。"] },
+  { topicNo: 16, q: "當刺激強度增加時，感受器產生的神經脈衝頻率會？", options: ["減少", "維持不變", "先減後增", "增加"], correct: 3, reasons: ["刺激越強，脈衝頻率越高。", "脈衝頻率會隨強度改變。", "脈衝頻率隨強度增加而增加。", "正確答案"] },
+  { topicNo: 17, q: "中樞神經系統由哪兩部分組成？", options: ["腦和脊髓", "腦和感覺神經元", "脊髓和運動神經元", "交感神經和副交感神經"], correct: 0, reasons: ["正確答案", "感覺神經元屬周邊神經系統。", "運動神經元屬周邊神經系統。", "交感、副交感神經屬自主神經系統。"] },
+  { topicNo: 17, q: "神經元傳遞訊息的方式是？", options: ["分泌激素", "透過血液運送", "產生並傳遞電脈衝（神經脈衝）", "直接接觸目標器官"], correct: 2, reasons: ["分泌激素是內分泌腺的功能。", "透過血液運送是激素的方式。", "正確答案", "神經元經突觸傳遞訊息，而非直接接觸。"] },
+  { topicNo: 17, q: "突觸中把訊息由一個神經元傳到另一個神經元的化學物質是？", options: ["激素", "神經遞質", "抗體", "酶"], correct: 1, reasons: ["激素由內分泌腺分泌入血液。", "正確答案", "抗體與免疫有關。", "酶催化化學反應。"] },
+  { topicNo: 17, q: "一個簡單反射弧的正確順序是？", options: ["效應器 → 感覺神經元 → 脊髓 → 運動神經元 → 感受器", "感受器 → 運動神經元 → 脊髓 → 感覺神經元 → 效應器", "效應器 → 運動神經元 → 脊髓 → 感覺神經元 → 感受器", "感受器 → 感覺神經元 → 脊髓 → 運動神經元 → 效應器"], correct: 3, reasons: ["順序應由感受器開始，效應器作結。", "感覺與運動神經元的位置顛倒。", "方向完全顛倒。", "正確答案"] },
+  { topicNo: 17, q: "與神經系統比較，內分泌系統傳遞訊息的特點是？", options: ["傳遞較快，作用較短暫", "傳遞較快，作用較持久", "傳遞較慢，但作用較持久", "傳遞較慢，作用也較短暫"], correct: 2, reasons: ["神經系統傳遞快、作用短暫。", "內分泌傳遞較慢。", "正確答案", "內分泌作用較持久。"] },
+  { topicNo: 17, q: "胰島素的主要功能是？", options: ["降低血糖濃度", "升高血糖濃度", "降低體溫", "升高血壓"], correct: 0, reasons: ["正確答案", "升高血糖的是胰高血糖素。", "胰島素不調節體溫。", "胰島素不直接調節血壓。"] },
+  { topicNo: 17, q: "進食後血糖升高，身體的正常反應是？", options: ["分泌較少胰島素", "分泌更多胰高血糖素", "停止分泌任何激素", "分泌更多胰島素，促使肝臟把葡萄糖轉為糖原"], correct: 3, reasons: ["血糖高時應分泌更多胰島素。", "胰高血糖素會進一步升高血糖。", "身體會分泌激素調節血糖。", "正確答案"] },
+  { topicNo: 17, q: "在緊急或受驚嚇時，腎上腺素會？", options: ["減慢心跳", "加快心跳和呼吸，升高血糖", "降低血糖", "抑制身體活動"], correct: 1, reasons: ["腎上腺素會加快心跳。", "正確答案", "腎上腺素會升高血糖以提供能量。", "腎上腺素會使身體進入應急狀態。"] },
+  { topicNo: 17, q: "以下哪個腺體屬於內分泌腺？", options: ["唾液腺", "汗腺", "甲狀腺", "胃腺"], correct: 2, reasons: ["唾液腺屬外分泌腺，經管道分泌。", "汗腺屬外分泌腺。", "正確答案", "胃腺經管道分泌入胃，屬外分泌腺。"] },
+  { topicNo: 17, q: "激素由內分泌腺分泌後，經甚麼途徑運送到目標器官？", options: ["血液", "神經", "淋巴管", "消化道"], correct: 0, reasons: ["正確答案", "激素經血液運送，不經神經。", "激素主要經血液運送。", "激素不經消化道運送。"] },
+  { topicNo: 17, q: "以下哪項關於激素的敘述是正確的？", options: ["激素對所有細胞都產生相同作用", "激素是神經脈衝", "激素由外分泌腺分泌", "激素只作用於具有相應受體的目標器官"], correct: 3, reasons: ["激素具專一性，只作用於目標器官。", "激素是化學物質，不是電脈衝。", "激素由內分泌腺分泌。", "正確答案"] },
+  { topicNo: 17, q: "交感神經在緊急情況下會？", options: ["減慢心跳", "加快心跳", "促進消化", "收縮瞳孔"], correct: 1, reasons: ["交感神經加快心跳。", "正確答案", "緊急時消化活動受抑制。", "緊急時瞳孔放大。"] },
+  { topicNo: 17, q: "腦部控制呼吸、心跳等基本生命活動的中樞位於？", options: ["大腦", "小腦", "延髓", "下丘腦"], correct: 2, reasons: ["大腦負責高等功能。", "小腦負責協調和平衡。", "正確答案", "下丘腦主要調節體溫、水分等穩態。"] },
+  { topicNo: 17, q: "小腦的主要功能是？", options: ["協調肌肉運動和維持平衡", "控制呼吸", "分泌激素", "產生視覺"], correct: 0, reasons: ["正確答案", "控制呼吸是延髓。", "小腦不分泌激素。", "視覺在大腦視覺中樞形成。"] },
+  { topicNo: 17, q: "大腦的主要功能包括？", options: ["反射動作的簡單處理", "思考、記憶、學習等高等功能", "維持心跳", "分泌胰島素"], correct: 1, reasons: ["簡單反射由脊髓或延髓處理。", "正確答案", "心跳由延髓控制。", "胰島素由胰臟分泌。"] },
+  { topicNo: 17, q: "以下哪個腺體是外分泌腺而非內分泌腺？", options: ["甲狀腺", "腎上腺", "腦下垂體", "唾液腺"], correct: 3, reasons: ["甲狀腺是內分泌腺。", "腎上腺是內分泌腺。", "腦下垂體是內分泌腺。", "正確答案"] },
+  { topicNo: 17, q: "糖尿病（胰島素分泌不足）患者會出現？", options: ["血糖過高，尿液中可能含糖", "血糖過低", "尿液中完全不含糖", "血糖完全正常"], correct: 0, reasons: ["正確答案", "胰島素不足使血糖升高。", "血糖過高時多餘的糖會隨尿排出。", "血糖會異常升高。"] },
+  { topicNo: 17, q: "與在神經元內傳遞相比，訊息在突觸間的傳遞？", options: ["速度相同", "不靠化學物質", "較慢，需靠神經遞質擴散", "較快"], correct: 2, reasons: ["突觸傳遞較慢。", "突觸傳遞正需化學物質。", "正確答案", "突觸傳遞較慢。"] },
+  { topicNo: 17, q: "反射動作對身體的主要意義是？", options: ["使人學習新技能", "快速作出反應以保護身體免受傷害", "儲存記憶", "分泌激素"], correct: 1, reasons: ["學習是大腦功能，與反射意義不同。", "正確答案", "儲存記憶是大腦功能。", "反射不分泌激素。"] },
+  { topicNo: 17, q: "以下哪項最能說明激素的協調作用？", options: ["手碰到熱物立即縮回", "光線強時瞳孔縮小", "走路時保持平衡", "青春期出現第二性徵"], correct: 3, reasons: ["縮手是神經反射。", "瞳孔反射是神經反射。", "保持平衡是小腦和神經系統的協調。", "正確答案"] },
+  { topicNo: 18, q: "以下哪項不是骨骼的功能？", options: ["分泌消化酶", "支持身體", "保護內臟", "製造血細胞"], correct: 0, reasons: ["正確答案", "支持身體是骨骼功能。", "保護內臟（如頭骨保護腦）是骨骼功能。", "紅骨髓製造血細胞是骨骼功能。"] },
+  { topicNo: 18, q: "以下哪種關節的活動幅度最大？", options: ["鉸鏈關節", "樞軸關節", "球窩關節", "滑動關節"], correct: 2, reasons: ["鉸鏈關節只能單方向屈伸。", "樞軸關節只能轉動。", "正確答案", "滑動關節活動幅度小。"] },
+  { topicNo: 18, q: "肘關節屬於哪類關節？", options: ["球窩關節", "鉸鏈關節", "樞軸關節", "不動關節"], correct: 1, reasons: ["球窩關節如肩、髖關節。", "正確答案", "樞軸關節如頸部第一、二節脊椎之間。", "肘關節是可動關節。"] },
+  { topicNo: 18, q: "肌肉附著於骨骼上的結構是？", options: ["韌帶", "軟骨", "關節囊", "肌腱"], correct: 3, reasons: ["韌帶連接骨骼與骨骼。", "軟骨覆蓋關節面。", "關節囊包圍關節。", "正確答案"] },
+  { topicNo: 18, q: "把骨骼與骨骼連接在一起的結構是？", options: ["肌腱", "肌肉", "韌帶", "皮膚"], correct: 2, reasons: ["肌腱連接肌肉與骨骼。", "肌肉不直接連接骨骼。", "正確答案", "皮膚不是連接結構。"] },
+  { topicNo: 18, q: "屈曲手臂（把前臂向上提起）時，二頭肌和三頭肌的狀態是？", options: ["二頭肌收縮，三頭肌鬆弛", "二頭肌鬆弛，三頭肌收縮", "兩者同時收縮", "兩者同時鬆弛"], correct: 0, reasons: ["正確答案", "屈臂時二頭肌收縮、三頭肌鬆弛。", "兩者不會同時收縮。", "至少二頭肌需收縮。"] },
+  { topicNo: 18, q: "以下哪對肌肉是拮抗肌？", options: ["心肌和骨骼肌", "平滑肌和心肌", "二頭肌和二頭肌", "二頭肌和三頭肌"], correct: 3, reasons: ["心肌與骨骼肌不是拮抗關係。", "平滑肌與心肌不是拮抗關係。", "同一肌肉不能互為拮抗。", "正確答案"] },
+  { topicNo: 18, q: "骨中使其堅硬的無機成分主要是？", options: ["蛋白質", "鈣鹽", "脂質", "醣類"], correct: 1, reasons: ["蛋白質使骨有彈性。", "正確答案", "脂質不是骨的主要成分。", "醣類不是骨的主要成分。"] },
+  { topicNo: 18, q: "骨中的有機成分（主要為蛋白質）使骨具有？", options: ["堅硬性", "脆性", "彈性", "透明性"], correct: 2, reasons: ["堅硬性來自鈣鹽。", "脆性不是蛋白質的作用。", "正確答案", "骨不透明。"] },
+  { topicNo: 18, q: "關節軟骨的功能是？", options: ["減少骨骼之間的摩擦", "製造血細胞", "儲存鈣質", "使骨骼增長"], correct: 0, reasons: ["正確答案", "造血在紅骨髓。", "儲鈣主要在骨組織。", "骨骼增長在骨骺板。"] },
+  { topicNo: 18, q: "關節內的滑液功能是？", options: ["使骨變硬", "連接兩塊骨", "製造紅血球", "潤滑關節，減少摩擦"], correct: 3, reasons: ["滑液不使骨變硬。", "連接骨的是韌帶。", "造血在紅骨髓。", "正確答案"] },
+  { topicNo: 18, q: "長期缺乏運動或長期卧床會令骨質流失，這說明骨骼需要？", options: ["大量鈣片才足夠", "負重運動的刺激來維持強度", "完全靜止", "更多水分"], correct: 1, reasons: ["單靠鈣片不足以完全維持骨質。", "正確答案", "靜止會加速骨質流失。", "水分與骨質強度無直接關係。"] },
+  { topicNo: 18, q: "骨折後骨能自行癒合，主要是因為？", options: ["肌肉收縮把骨拉合", "韌帶增生", "骨膜細胞分裂並形成新骨組織", "軟骨變硬"], correct: 2, reasons: ["肌肉不能使骨癒合。", "韌帶不參與骨癒合。", "正確答案", "骨癒合不是靠軟骨變硬。"] },
+  { topicNo: 18, q: "肌肉收縮時所需的能量來自？", options: ["呼吸作用", "光合作用", "擴散作用", "蒸騰作用"], correct: 0, reasons: ["正確答案", "動物不能進行光合作用。", "擴散不提供能量。", "蒸騰是植物失水過程。"] },
+  { topicNo: 18, q: "人體紅骨髓的主要功能是？", options: ["儲存脂肪", "製造血細胞", "製造消化液", "分泌激素"], correct: 1, reasons: ["儲存脂肪是黃骨髓的功能。", "正確答案", "骨髓不製造消化液。", "紅骨髓不分泌激素。"] },
+  { topicNo: 18, q: "人類脊柱呈 S 形的功能是？", options: ["增加身高", "使身體能彎曲成圓形", "儲存鈣質", "吸收運動時的震盪，保護腦部"], correct: 3, reasons: ["S 形與身高增加無直接關係。", "脊柱不能彎成圓形。", "儲鈣主要在骨組織，與 S 形無關。", "正確答案"] },
+  { topicNo: 18, q: "肩關節和髖關節都屬於？", options: ["球窩關節", "鉸鏈關節", "樞軸關節", "不動關節"], correct: 0, reasons: ["正確答案", "鉸鏈關節如肘、膝關節。", "樞軸關節如頸椎第一二節。", "肩、髖是可動關節。"] },
+  { topicNo: 18, q: "老年人較易發生骨折，主要原因是？", options: ["骨中蛋白質過多", "骨中水分過多", "骨中鈣鹽比例高而蛋白質減少，骨較脆", "骨髓過多"], correct: 2, reasons: ["老年人骨中蛋白質減少。", "骨中水分與脆性無直接關係。", "正確答案", "骨髓與骨的脆性無直接關係。"] },
+  { topicNo: 18, q: "關節面上覆蓋的軟骨有何特點？", options: ["含有大量血管", "表面光滑，可減少摩擦", "會隨運動被磨成骨", "只存在於頭骨"], correct: 1, reasons: ["軟骨一般沒有血管供應。", "正確答案", "軟骨雖會磨損，但不會變成骨。", "軟骨覆蓋於可動關節面。"] },
+  { topicNo: 18, q: "舉起重物時，前臂的槓桿系統中支點位於？", options: ["手掌", "肩膀", "手腕", "肘關節"], correct: 3, reasons: ["手掌是施力點或負重點。", "肩膀不是前臂槓桿的支點。", "手腕接近負重位置。", "正確答案"] },
+  { topicNo: 19, q: "「體內平衡」（穩態）是指？", options: ["維持身體內部環境處於相對穩定的狀態", "身體完全不變", "體溫恆等於環境溫度", "只調節血糖"], correct: 0, reasons: ["正確答案", "身體內部環境會在狹窄範圍內波動。", "體溫通常維持在特定範圍，不隨環境任意改變。", "穩態包括體溫、血糖、水分等多方面。"] },
+  { topicNo: 19, q: "血糖濃度的調節屬於哪種機制？", options: ["正反饋", "沒有反饋", "負反饋", "擴散作用"], correct: 2, reasons: ["血糖調節是負反饋。", "血糖調節有明確的反饋機制。", "正確答案", "擴散不是調節機制。"] },
+  { topicNo: 19, q: "體溫調節中樞位於？", options: ["大腦皮層", "下丘腦", "小腦", "延髓"], correct: 1, reasons: ["大腦皮層負責高等功能。", "正確答案", "小腦負責協調平衡。", "延髓控制呼吸心跳。"] },
+  { topicNo: 19, q: "天氣炎熱時，身體的散熱反應包括？", options: ["皮膚血管收縮", "顫抖", "減少出汗", "皮膚血管擴張，出汗增多"], correct: 3, reasons: ["血管收縮會減少散熱。", "顫抖會產熱。", "減少出汗不利散熱。", "正確答案"] },
+  { topicNo: 19, q: "天氣寒冷時，身體的保溫反應包括？", options: ["皮膚血管擴張", "大量出汗", "皮膚血管收縮，肌肉顫抖產熱", "毛髮完全豎起以吸收熱量"], correct: 2, reasons: ["血管擴張會散熱。", "出汗會散熱。", "正確答案", "毛髮豎起作用有限，主要靠血管收縮和顫抖。"] },
+  { topicNo: 19, q: "血液中水分過少時，身體的反應是？", options: ["分泌更多抗利尿激素，減少排尿", "分泌較少抗利尿激素", "增加排尿", "停止出汗"], correct: 0, reasons: ["正確答案", "水分少時應分泌更多 ADH。", "水分少時應減少排尿以保水。", "出汗仍受體溫調節影響。"] },
+  { topicNo: 19, q: "以下哪項是人體的排泄器官？", options: ["心臟", "肝臟", "胃", "腎臟"], correct: 3, reasons: ["心臟負責泵血，不排泄。", "肝臟分解廢物，但排泄主要由腎等進行。", "胃不負責排泄。", "正確答案"] },
+  { topicNo: 19, q: "進食後血糖升高，肝臟會？", options: ["把糖原分解為葡萄糖", "把過多的葡萄糖轉為糖原儲存", "停止所有代謝", "把葡萄糖轉為蛋白質"], correct: 1, reasons: ["血糖高時肝臟儲存葡萄糖，而非分解糖原。", "正確答案", "肝臟不會停止代謝。", "肝臟主要把葡萄糖轉為糖原或脂肪，而非蛋白質。"] },
+  { topicNo: 19, q: "正常人的尿液中一般不含？", options: ["尿素", "鹽分", "蛋白質", "水分"], correct: 2, reasons: ["尿中含尿素。", "尿中含鹽分。", "正確答案", "尿中大部分是水。"] },
+  { topicNo: 19, q: "皮膚在體溫調節中的作用是？", options: ["透過出汗和調節皮膚血流來散熱或保溫", "分泌胰島素", "儲存糖原", "製造紅血球"], correct: 0, reasons: ["正確答案", "胰島素由胰臟分泌。", "儲存糖原是肝臟功能。", "造血在紅骨髓。"] },
+  { topicNo: 19, q: "體內平衡包括調節以下哪項？", options: ["頭髮長度", "指甲硬度", "皮膚顏色", "血糖、體溫和水分"], correct: 3, reasons: ["頭髮長度不屬穩態。", "指甲硬度不屬穩態。", "皮膚顏色不屬穩態核心。", "正確答案"] },
+  { topicNo: 19, q: "胰島素和胰高血糖素由哪個器官分泌？", options: ["肝臟", "胰臟", "腎臟", "胃"], correct: 1, reasons: ["肝臟是胰島素作用的目標之一。", "正確答案", "腎臟不分泌這些激素。", "胃不分泌這些激素。"] },
+  { topicNo: 19, q: "在負反饋機制中，當偏差被糾正後，激素的分泌通常會？", options: ["繼續增加", "維持在最高水平", "減少，恢復正常水平", "完全停止"], correct: 2, reasons: ["偏差糾正後分泌應減少。", "分泌不應維持最高。", "正確答案", "分泌不會完全停止，只恢復正常。"] },
+  { topicNo: 19, q: "出汗的主要生理意義是？", options: ["水分蒸發時帶走熱量，有助降溫", "排出大量葡萄糖", "增加體溫", "排出二氧化碳"], correct: 0, reasons: ["正確答案", "汗液不含大量葡萄糖。", "出汗有助降溫。", "二氧化碳主要由肺排出。"] },
+  { topicNo: 19, q: "以下哪組器官都參與維持體內平衡？", options: ["心、肺、骨骼", "肝、腎、肺、皮膚", "眼、耳、舌", "骨、軟骨、韌帶"], correct: 1, reasons: ["心、肺、骨骼不全屬穩態核心器官。", "正確答案", "眼耳舌與穩態無直接關係。", "骨軟骨韌帶與穩態無直接關係。"] },
+  { topicNo: 19, q: "血糖過低時，胰臟會分泌？", options: ["胰島素", "腎上腺素", "醛固酮", "胰高血糖素，促使肝糖原分解"], correct: 3, reasons: ["胰島素會進一步降低血糖。", "腎上腺素雖能升血糖，但主要由腎上腺分泌。", "醛固酮調節鹽分。", "正確答案"] },
+  { topicNo: 19, q: "抗利尿激素（ADH）由哪個腺體分泌？", options: ["腦下垂體", "甲狀腺", "腎上腺", "胰臟"], correct: 0, reasons: ["正確答案", "甲狀腺分泌甲狀腺素。", "腎上腺分泌腎上腺素等。", "胰臟分泌胰島素和胰高血糖素。"] },
+  { topicNo: 19, q: "腎臟中過濾血液並形成尿液的功能單位是？", options: ["腎盂", "輸尿管", "腎元", "膀胱"], correct: 2, reasons: ["腎盂收集尿液。", "輸尿管運送尿液。", "正確答案", "膀胱儲存尿液。"] },
+  { topicNo: 19, q: "排汗除了調節體溫外，還能排出？", options: ["大量蛋白質", "鹽分和少量尿素", "紅血球", "葡萄糖"], correct: 1, reasons: ["汗液不含大量蛋白質。", "正確答案", "汗液不含紅血球。", "汗液不含大量葡萄糖。"] },
+  { topicNo: 19, q: "冬天皮膚血管收縮的意義是？", options: ["增加散熱", "使皮膚變白", "降低體溫", "減少熱量散失，保持體溫"], correct: 3, reasons: ["血管收縮減少散熱。", "皮膚變白不是其意義。", "目的是維持體溫。", "正確答案"] },
+  { topicNo: 20, q: "一個生態系由甚麼組成？", options: ["生物群落與其非生物環境相互作用", "只有動物", "只有植物", "只有非生物因素"], correct: 0, reasons: ["正確答案", "生態系包括生物和非生物環境。", "生態系包括所有生物。", "生態系也包括生物群落。"] },
+  { topicNo: 20, q: "以下哪項屬於生態系中的非生物因子？", options: ["草", "兔子", "溫度", "細菌"], correct: 2, reasons: ["草是生物因子。", "兔子是生物因子。", "正確答案", "細菌是生物因子。"] },
+  { topicNo: 20, q: "食物鏈中，生產者通常是？", options: ["草食動物", "綠色植物", "肉食動物", "真菌"], correct: 1, reasons: ["草食動物是初級消費者。", "正確答案", "肉食動物是消費者。", "真菌是分解者。"] },
+  { topicNo: 20, q: "與食物鏈相比，食物網更能反映？", options: ["單一的攝食關係", "能量的來源", "生物的大小", "生態系中複雜的攝食關係"], correct: 3, reasons: ["食物鏈只顯示單一路徑。", "能量來源兩者都能反映。", "食物網與生物大小無關。", "正確答案"] },
+  { topicNo: 20, q: "能量沿食物鏈傳遞時，大部分能量以甚麼形式散失？", options: ["光能", "化學能", "熱能", "電能"], correct: 2, reasons: ["光能是生產者的能量來源。", "化學能儲存於食物中。", "正確答案", "生物不以電能形式散失能量。"] },
+  { topicNo: 20, q: "沿食物鏈向上，能量（或生物量）通常會？", options: ["逐級減少", "逐級增加", "保持不變", "無限增加"], correct: 0, reasons: ["正確答案", "能量會逐級減少。", "能量不會保持不變。", "能量不可能無限增加。"] },
+  { topicNo: 20, q: "分解者在生態系中的主要作用是？", options: ["進行光合作用", "捕食消費者", "固定大氣中的氮", "把死去的生物和廢物分解成無機物"], correct: 3, reasons: ["光合作用是生產者的功能。", "分解者不捕食。", "固氮由固氮細菌進行。", "正確答案"] },
+  { topicNo: 20, q: "以下哪項是分解者？", options: ["草", "細菌和真菌", "蝗蟲", "獅子"], correct: 1, reasons: ["草是生產者。", "正確答案", "蝗蟲是初級消費者。", "獅子是消費者。"] },
+  { topicNo: 20, q: "碳循環中，二氧化碳返回大氣的主要途徑是？", options: ["光合作用", "固氮作用", "呼吸作用和燃燒", "蒸騰作用"], correct: 2, reasons: ["光合作用吸收二氧化碳。", "固氮與碳循環無關。", "正確答案", "蒸騰是水分散失。"] },
+  { topicNo: 20, q: "氮循環中，把大氣中的氮轉為植物可利用形式的過程是？", options: ["固氮作用", "硝化作用", "反硝化作用", "氨化作用"], correct: 0, reasons: ["正確答案", "硝化作用把銨轉為硝酸鹽。", "反硝化作用把硝酸鹽轉為氮氣。", "氨化作用把有機氮轉為銨。"] },
+  { topicNo: 20, q: "以下哪種生物是初級消費者？", options: ["綠色植物", "真菌", "鷹", "草食動物"], correct: 3, reasons: ["綠色植物是生產者。", "真菌是分解者。", "鷹是較高級消費者。", "正確答案"] },
+  { topicNo: 20, q: "食物鏈「草 → 兔 → 狐」中，兔屬於？", options: ["生產者", "初級消費者", "次級消費者", "分解者"], correct: 1, reasons: ["草才是生產者。", "正確答案", "狐是次級消費者。", "兔不是分解者。"] },
+  { topicNo: 20, q: "能量金字塔一般呈甚麼形狀？", options: ["倒三角形", "圓形", "金字塔形（底部大、頂部小）", "正方形"], correct: 2, reasons: ["能量金字塔不呈倒三角形。", "能量金字塔不呈圓形。", "正確答案", "能量金字塔不呈正方形。"] },
+  { topicNo: 20, q: "使用樣方調查植物分布時，樣方應如何放置？", options: ["隨機放置", "全部放在植物最密的地方", "全部放在沒有植物的地方", "沿一條直線每隔固定距離放置且不隨機"], correct: 0, reasons: ["正確答案", "只放在最密處會高估。", "只放在空處會低估。", "沿直線屬樣線法，但樣方調查宜隨機。"] },
+  { topicNo: 20, q: "調查動物種群數量常用的方法是？", options: ["樣方法", "捕捉—標記—重捕法", "數所有葉片", "量度乾質量"], correct: 1, reasons: ["樣方法多用於植物或靜止生物。", "正確答案", "數葉片不適合動物。", "乾質量與調查種群無關。"] },
+  { topicNo: 20, q: "以下哪項會增加大氣中的二氧化碳濃度？", options: ["植樹造林", "光合作用", "海洋吸收", "燃燒化石燃料"], correct: 3, reasons: ["植樹會吸收二氧化碳。", "光合作用吸收二氧化碳。", "海洋吸收二氧化碳。", "正確答案"] },
+  { topicNo: 20, q: "生態系中，綠色植物的角色是？", options: ["把光能轉為化學能（生產者）", "分解有機物", "只消耗氧氣", "捕食其他生物"], correct: 0, reasons: ["正確答案", "分解有機物是分解者。", "植物光合作用產生氧氣。", "植物不捕食。"] },
+  { topicNo: 20, q: "食物鏈中所有能量的最終來源是？", options: ["地熱", "風能", "太陽", "土壤"], correct: 2, reasons: ["地熱不是食物鏈能量來源。", "風能不是食物鏈能量來源。", "正確答案", "土壤不提供能量。"] },
+  { topicNo: 20, q: "水體中藻類大量繁殖可能導致？", options: ["水中氧氣增加", "水體缺氧，魚類死亡（優養化）", "水體變得更清澈", "魚類數量增加"], correct: 1, reasons: ["藻類死亡分解會消耗氧氣。", "正確答案", "藻類過多使水體混濁。", "缺氧會使魚類死亡。"] },
+  { topicNo: 20, q: "硝化細菌在氮循環中的作用是？", options: ["把氮氣轉為氨", "把硝酸鹽轉為氮氣", "把有機物轉為氨", "把銨轉為亞硝酸鹽和硝酸鹽"], correct: 3, reasons: ["把氮氣轉為氨是固氮。", "硝酸鹽轉氮氣是反硝化。", "有機物轉氨是氨化。", "正確答案"] },
+  { topicNo: 21, q: "光合作用在植物細胞的哪個結構進行？", options: ["葉綠體", "線粒體", "細胞核", "液泡"], correct: 0, reasons: ["正確答案", "線粒體進行呼吸作用。", "細胞核儲存遺傳信息。", "液泡儲存物質。"] },
+  { topicNo: 21, q: "光合作用的原料是？", options: ["葡萄糖和氧", "葡萄糖和水", "二氧化碳和水", "氧和水"], correct: 2, reasons: ["葡萄糖和氧是產物。", "葡萄糖是產物。", "正確答案", "氧是產物。"] },
+  { topicNo: 21, q: "光合作用的產物是？", options: ["二氧化碳和水", "葡萄糖和氧", "二氧化碳和氧", "澱粉和二氧化碳"], correct: 1, reasons: ["二氧化碳和水是原料。", "正確答案", "二氧化碳是原料。", "二氧化碳是原料，不是產物。"] },
+  { topicNo: 21, q: "光合作用釋放的氧來自？", options: ["二氧化碳的分解", "葡萄糖的分解", "大氣中的氧", "水的光解"], correct: 3, reasons: ["氧來自水而非二氧化碳。", "葡萄糖不是氧的來源。", "氧是光合作用產生，非來自大氣。", "正確答案"] },
+  { topicNo: 21, q: "光合作用的光反應需要？", options: ["二氧化碳和葡萄糖", "氧和 ATP", "光和水", "二氧化碳和黑暗"], correct: 2, reasons: ["二氧化碳在暗反應使用。", "氧是產物。", "正確答案", "光反應需光。"] },
+  { topicNo: 21, q: "光合作用的暗反應（卡爾文循環）需要？", options: ["二氧化碳、ATP 和 NADPH", "光和氧", "水和葡萄糖", "黑暗才能進行"], correct: 0, reasons: ["正確答案", "暗反應不需光。", "暗反應的原料是二氧化碳。", "暗反應不需黑暗，只是不需光。"] },
+  { topicNo: 21, q: "光合作用把光能轉化為？", options: ["熱能", "電能", "動能", "儲存在葡萄糖中的化學能"], correct: 3, reasons: ["光合作用儲存能量，不只轉為熱。", "光合作用不產生電能。", "光合作用不產生動能。", "正確答案"] },
+  { topicNo: 21, q: "以下哪項通常不是光合作用的限制因素？", options: ["光照強度", "氧氣濃度", "二氧化碳濃度", "溫度"], correct: 1, reasons: ["光強是限制因素。", "正確答案", "二氧化碳是限制因素。", "溫度影響酶活性，是限制因素。"] },
+  { topicNo: 21, q: "用碘液測試葉片中的澱粉前，需先？", options: ["直接把碘液滴在綠色葉片上", "只用水沖洗", "用沸水殺死細胞並用熱酒精脫色", "在黑暗中放置數天"], correct: 2, reasons: ["綠色會遮蓋顏色變化。", "水沖洗不能脫色。", "正確答案", "黑暗處理是實驗前的去澱粉步驟，不是測試步驟。"] },
+  { topicNo: 21, q: "把葉片放入沸騰酒精中的目的是？", options: ["脫去葉綠素，使碘液顏色變化清晰可見", "殺死所有細菌", "使葉片變硬", "溶解澱粉"], correct: 0, reasons: ["正確答案", "目的是脫色而非殺菌。", "酒精使葉片變脆，不是變硬。", "酒精不溶解澱粉。"] },
+  { topicNo: 21, q: "證明光合作用需要光的實驗中，葉片部分被遮蓋，結果是？", options: ["全葉變藍黑", "全葉不變色", "遮光部分變藍黑", "曝光部分變藍黑，遮光部分不變色"], correct: 3, reasons: ["遮光部分不能進行光合作用。", "曝光部分會產生澱粉。", "遮光部分無澱粉。", "正確答案"] },
+  { topicNo: 21, q: "證明光合作用需要二氧化碳的實驗中，氫氧化鈉溶液的作用是？", options: ["提供二氧化碳", "吸收瓶內的二氧化碳", "提供氧氣", "吸收氧氣"], correct: 1, reasons: ["氫氧化鈉吸收而非提供二氧化碳。", "正確答案", "氫氧化鈉不提供氧氣。", "氫氧化鈉吸收二氧化碳而非氧氣。"] },
+  { topicNo: 21, q: "水生植物（如黑藻）在光下產生的氣泡主要是？", options: ["二氧化碳", "氮氣", "氧氣", "水蒸氣"], correct: 2, reasons: ["二氧化碳是光合作用原料。", "光合作用不產生氮氣。", "正確答案", "氣泡不是水蒸氣。"] },
+  { topicNo: 21, q: "光合作用的光反應在哪裏進行？", options: ["葉綠體的類囊體膜", "線粒體基質", "細胞核", "細胞壁"], correct: 0, reasons: ["正確答案", "線粒體進行呼吸作用。", "細胞核不含光合色素。", "細胞壁無光合作用。"] },
+  { topicNo: 21, q: "光照強度增加到一定程度後，光合速率不再上升，是因為？", options: ["葉綠素被破壞", "其他因素（如二氧化碳濃度）成為限制因素", "溫度一定下降", "植物停止呼吸"], correct: 1, reasons: ["光照過強才可能破壞葉綠素。", "正確答案", "溫度未必下降。", "植物不會停止呼吸。"] },
+  { topicNo: 21, q: "以下哪項關於光合作用的敘述正確？", options: ["把有機物轉為無機物", "釋放能量供細胞使用", "只在晚上進行", "把無機物轉化為有機物並儲存能量"], correct: 3, reasons: ["光合作用把無機物轉為有機物。", "光合作用儲存能量而非釋放。", "光合作用需光，主要在日間。", "正確答案"] },
+  { topicNo: 21, q: "葉片中進行大部分光合作用的組織是？", options: ["柵狀組織", "海綿組織", "表皮", "維管束"], correct: 0, reasons: ["正確答案", "海綿組織也進行光合作用但較少。", "表皮一般不含葉綠體。", "維管束負責運輸。"] },
+  { topicNo: 21, q: "氣孔由保衛細胞控制，其主要功能是？", options: ["吸收陽光", "儲存澱粉", "調節二氧化碳進入和水分散失", "製造葡萄糖"], correct: 2, reasons: ["吸收陽光靠葉綠素。", "儲存澱粉不是氣孔功能。", "正確答案", "製造葡萄糖在葉綠體。"] },
+  { topicNo: 21, q: "光合作用與呼吸作用在能量方面的關係是？", options: ["兩者都儲存能量", "光合作用儲存能量，呼吸作用釋放能量", "兩者都釋放能量", "光合作用釋放能量，呼吸作用儲存能量"], correct: 1, reasons: ["呼吸作用釋放能量。", "正確答案", "光合作用儲存能量。", "兩者角色相反。"] },
+  { topicNo: 21, q: "光合作用實驗前，把植物放在黑暗中一晝夜的目的是？", options: ["增加葉片中的澱粉", "使植物更綠", "促進光合作用", "耗盡葉片中原本儲存的澱粉"], correct: 3, reasons: ["黑暗會耗盡澱粉而非增加。", "黑暗不使植物更綠。", "黑暗中不能光合作用。", "正確答案"] },
+  { topicNo: 22, q: "呼吸作用的定義是？", options: ["細胞內分解有機物以釋放能量的過程", "肺部吸入氧氣", "排出二氧化碳", "氣體在肺部的交換"], correct: 0, reasons: ["正確答案", "吸入氧氣是換氣，不是呼吸作用。", "排二氧化碳是換氣。", "氣體交換是換氣。"] },
+  { topicNo: 22, q: "有氧呼吸的主要場所是？", options: ["細胞核", "核糖體", "線粒體", "高爾基體"], correct: 2, reasons: ["細胞核不含呼吸酶。", "核糖體合成蛋白質。", "正確答案", "高爾基體修飾包裝蛋白質。"] },
+  { topicNo: 22, q: "有氧呼吸的最終產物是？", options: ["葡萄糖和氧", "二氧化碳、水和大量能量（ATP）", "乳酸和二氧化碳", "乙醇和水"], correct: 1, reasons: ["葡萄糖和氧是原料。", "正確答案", "乳酸是無氧呼吸產物。", "乙醇是酵母無氧呼吸產物。"] },
+  { topicNo: 22, q: "呼吸作用釋放的能量主要以甚麼形式儲存？", options: ["葡萄糖", "熱能", "光能", "ATP"], correct: 3, reasons: ["葡萄糖是原料。", "熱能是散失形式。", "呼吸作用不產生光能。", "正確答案"] },
+  { topicNo: 22, q: "人體肌肉在缺氧情況下進行無氧呼吸，產物是？", options: ["乙醇和二氧化碳", "二氧化碳和水", "乳酸", "葡萄糖"], correct: 2, reasons: ["乙醇是酵母無氧呼吸產物。", "二氧化碳和水是有氧呼吸產物。", "正確答案", "葡萄糖是原料。"] },
+  { topicNo: 22, q: "酵母菌在缺氧環境下進行無氧呼吸，產物是？", options: ["乙醇和二氧化碳", "乳酸", "水和氧", "葡萄糖"], correct: 0, reasons: ["正確答案", "乳酸是動物肌肉無氧呼吸產物。", "酵母無氧呼吸不產生氧。", "葡萄糖是原料。"] },
+  { topicNo: 22, q: "「呼吸作用」與「呼吸（換氣）」的分別是？", options: ["兩者完全相同", "呼吸作用在肺進行", "換氣在細胞內進行", "呼吸作用是細胞內釋能的過程，換氣是氣體進出身體"], correct: 3, reasons: ["兩者不同。", "呼吸作用在細胞（線粒體）進行。", "換氣在肺部進行。", "正確答案"] },
+  { topicNo: 22, q: "有氧呼吸的原料是？", options: ["二氧化碳和水", "葡萄糖和氧", "乳酸", "乙醇"], correct: 1, reasons: ["二氧化碳和水是產物。", "正確答案", "乳酸是產物。", "乙醇是酵母無氧呼吸產物。"] },
+  { topicNo: 22, q: "顯示呼吸作用產生二氧化碳，可用甚麼試劑？", options: ["碘液", "本立德試劑", "石灰水（變混濁）", "縮二脲試劑"], correct: 2, reasons: ["碘液測澱粉。", "本立德測還原糖。", "正確答案", "縮二脲測蛋白質。"] },
+  { topicNo: 22, q: "顯示呼吸作用產生熱能的實驗中，常用？", options: ["真空瓶（保溫瓶）內放發芽種子，觀察溫度上升", "燒杯內放石灰水", "試管內放碘液", "培養皿內放洋蔥表皮"], correct: 0, reasons: ["正確答案", "石灰水測二氧化碳。", "碘液測澱粉。", "洋蔥表皮與呼吸實驗無關。"] },
+  { topicNo: 22, q: "劇烈運動後肌肉痠痛，主要原因是？", options: ["二氧化碳積聚", "酒精積聚", "氧氣過多", "乳酸積聚"], correct: 3, reasons: ["二氧化碳會經血液和肺排出。", "人體肌肉不產生酒精。", "痠痛不是氧氣過多引起。", "正確答案"] },
+  { topicNo: 22, q: "與有氧呼吸相比，無氧呼吸？", options: ["釋放更多能量", "釋放較少能量", "不分解葡萄糖", "產生更多 ATP"], correct: 1, reasons: ["有氧呼吸釋放更多能量。", "正確答案", "無氧呼吸也分解葡萄糖。", "無氧呼吸產生的 ATP 較少。"] },
+  { topicNo: 22, q: "糖酵解（呼吸作用第一階段）在細胞的哪部分進行？", options: ["線粒體", "細胞核", "細胞質", "葉綠體"], correct: 2, reasons: ["糖酵解在細胞質進行。", "細胞核不含糖酵解酶。", "正確答案", "葉綠體進行光合作用。"] },
+  { topicNo: 22, q: "種子萌發時，呼吸作用會？", options: ["加快，以釋放能量供生長", "停止", "減慢", "不產生能量"], correct: 0, reasons: ["正確答案", "萌發需要大量能量。", "萌發時呼吸加快。", "呼吸作用必產生能量。"] },
+  { topicNo: 22, q: "以下哪項不是有氧呼吸的原料？", options: ["葡萄糖", "二氧化碳", "氧", "水"], correct: 1, reasons: ["葡萄糖是原料。", "正確答案", "氧是原料。", "水可作為代謝介質，但不是主要限制原料。"] },
+  { topicNo: 22, q: "劇烈運動後，需要額外吸入的氧（氧債）主要用於？", options: ["合成葡萄糖", "分解蛋白質", "製造二氧化碳", "分解積聚的乳酸"], correct: 3, reasons: ["氧債不是用於合成葡萄糖。", "氧債與蛋白質分解無關。", "二氧化碳是副產物。", "正確答案"] },
+  { topicNo: 22, q: "有氧呼吸中，氧的最終角色是？", options: ["作為最終電子受體，與氫結合生成水", "直接分解葡萄糖", "轉化為二氧化碳", "儲存於 ATP"], correct: 0, reasons: ["正確答案", "葡萄糖在糖酵解分解，不需氧直接參與。", "二氧化碳來自碳的氧化。", "氧不儲存於 ATP。"] },
+  { topicNo: 22, q: "呼吸作用釋放的能量，除儲存於 ATP 外，其餘大部分以甚麼形式散失？", options: ["光能", "電能", "熱能", "化學能"], correct: 2, reasons: ["呼吸作用不散失光能。", "呼吸作用不散失電能。", "正確答案", "化學能儲存於 ATP。"] },
+  { topicNo: 22, q: "以下哪項實驗可用以顯示呼吸作用消耗氧氣？", options: ["把種子放在有石灰水的燒瓶", "把發芽種子放入密封瓶，觀察瓶內氣壓下降", "把葉片放入碘液", "把種子放在光照下"], correct: 1, reasons: ["石灰水測二氧化碳。", "正確答案", "碘液測澱粉。", "光照與消耗氧氣實驗無關。"] },
+  { topicNo: 22, q: "以下哪種生物在缺氧條件下進行無氧呼吸產生乙醇？", options: ["人類肌肉細胞", "紅血球", "神經細胞", "酵母菌"], correct: 3, reasons: ["人類肌肉產生乳酸。", "紅血球不進行無氧呼吸產乙醇。", "神經細胞需氧。", "正確答案"] },
+  { topicNo: 23, q: "以下哪項不是病原體？", options: ["白血球", "病毒", "細菌", "真菌"], correct: 0, reasons: ["正確答案", "病毒是病原體。", "細菌是病原體。", "真菌可致病，是病原體。"] },
+  { topicNo: 23, q: "病毒的重要特點是？", options: ["能獨立生活", "是細胞生物", "必須寄生在活細胞內才能繁殖", "能用抗生素殺死"], correct: 2, reasons: ["病毒不能獨立生活。", "病毒不是細胞。", "正確答案", "抗生素對病毒無效。"] },
+  { topicNo: 23, q: "細菌與病毒的分別是？", options: ["兩者都是細胞", "細菌是細胞，病毒不是細胞", "病毒是細胞，細菌不是", "兩者都不是細胞"], correct: 1, reasons: ["病毒不是細胞。", "正確答案", "細菌才是細胞。", "細菌是細胞。"] },
+  { topicNo: 23, q: "以下哪項不是傳染病的傳播途徑？", options: ["飛沫", "食物和水", "病媒", "遺傳"], correct: 3, reasons: ["飛沫是傳播途徑。", "食物和水是傳播途徑。", "病媒是傳播途徑。", "正確答案"] },
+  { topicNo: 23, q: "以下哪種疾病主要經飛沫傳播？", options: ["霍亂", "瘧疾", "肺結核", "愛滋病"], correct: 2, reasons: ["霍亂經食物和水。", "瘧疾經蚊子。", "正確答案", "愛滋病經血液和性接觸。"] },
+  { topicNo: 23, q: "以下哪種疾病主要經受污染的食物和水傳播？", options: ["霍亂", "瘧疾", "乙型肝炎", "愛滋病"], correct: 0, reasons: ["正確答案", "瘧疾經蚊子。", "乙型肝炎經血液等。", "愛滋病經血液和性接觸。"] },
+  { topicNo: 23, q: "瘧疾由甚麼傳播？", options: ["蒼蠅", "老鼠", "蝸牛", "蚊子"], correct: 3, reasons: ["蒼蠅傳播其他疾病，不是瘧疾。", "老鼠不是瘧疾病媒。", "蝸牛不是瘧疾病媒。", "正確答案"] },
+  { topicNo: 23, q: "以下哪種疾病主要經血液傳播？", options: ["感冒", "乙型肝炎", "霍亂", "肺結核"], correct: 1, reasons: ["感冒經飛沫。", "正確答案", "霍亂經食物和水。", "肺結核經飛沫。"] },
+  { topicNo: 23, q: "為防止傳染病擴散，患者應？", options: ["繼續上學或上班", "與他人共用毛巾", "接受隔離", "不洗手"], correct: 2, reasons: ["繼續上學會傳播疾病。", "共用毛巾會傳播。", "正確答案", "不洗手增加傳播風險。"] },
+  { topicNo: 23, q: "飯前洗手主要可預防？", options: ["經手和食物傳播的疾病", "經飛沫傳播的疾病", "經病媒傳播的疾病", "遺傳病"], correct: 0, reasons: ["正確答案", "洗手針對接觸傳播。", "洗手不能防病媒叮咬。", "遺傳病不是傳染病。"] },
+  { topicNo: 23, q: "消毒的作用是？", options: ["提供營養", "增強免疫力", "使病原體繁殖", "殺死病原體"], correct: 3, reasons: ["消毒不提供營養。", "消毒不直接增強免疫。", "消毒是殺滅而非繁殖病原體。", "正確答案"] },
+  { topicNo: 23, q: "抗生素對以下哪項無效？", options: ["細菌引起的肺炎", "病毒引起的感冒", "細菌引起的喉炎", "細菌引起的皮膚感染"], correct: 1, reasons: ["抗生素能殺細菌。", "正確答案", "抗生素能殺細菌。", "抗生素能殺細菌。"] },
+  { topicNo: 23, q: "「潛伏期」是指？", options: ["疾病康復所需的時間", "接種疫苗後的休息時間", "從病原體侵入到出現症狀的時期", "消毒所需的時間"], correct: 2, reasons: ["康復時間不是潛伏期。", "接種與潛伏期無關。", "正確答案", "消毒時間不是潛伏期。"] },
+  { topicNo: 23, q: "飲用煮沸的水可預防？", options: ["經水傳播的疾病", "經飛沫傳播的疾病", "經病媒傳播的疾病", "所有疾病"], correct: 0, reasons: ["正確答案", "煮沸水針對水媒疾病。", "煮沸水不能防病媒。", "煮沸水不能防所有疾病。"] },
+  { topicNo: 23, q: "瘧疾的病原體是？", options: ["細菌", "瘧原蟲（原生動物）", "病毒", "真菌"], correct: 1, reasons: ["瘧疾不是細菌引起。", "正確答案", "瘧疾不是病毒引起。", "瘧疾不是真菌引起。"] },
+  { topicNo: 23, q: "愛滋病的病原體是？", options: ["細菌", "真菌", "瘧原蟲", "人類免疫缺陷病毒（HIV）"], correct: 3, reasons: ["愛滋病由病毒引起。", "愛滋病由病毒引起。", "瘧原蟲引起瘧疾。", "正確答案"] },
+  { topicNo: 23, q: "肺結核的病原體是？", options: ["結核桿菌（細菌）", "病毒", "真菌", "原生動物"], correct: 0, reasons: ["正確答案", "肺結核由細菌引起。", "肺結核不是真菌引起。", "肺結核不是原生動物引起。"] },
+  { topicNo: 23, q: "以下哪項正確描述傳染病？", options: ["由遺傳引起", "不會傳播", "由病原體引起並可在個體間傳播", "只影響老年人"], correct: 2, reasons: ["傳染病由病原體引起。", "傳染病會傳播。", "正確答案", "傳染病可影響任何人。"] },
+  { topicNo: 23, q: "咳嗽或打噴嚏時掩住口鼻，主要是為了？", options: ["保持個人清潔", "減少飛沫傳播病原體", "保暖", "避免吸入灰塵"], correct: 1, reasons: ["主要目的是防止飛沫傳播。", "正確答案", "與保暖無關。", "主要針對飛沫而非灰塵。"] },
+  { topicNo: 23, q: "疫苗接種在預防疾病方面屬於？", options: ["治療已感染者", "殺死環境中的病原體", "消毒", "預防性措施"], correct: 3, reasons: ["疫苗用於預防而非治療。", "疫苗不消毒環境。", "疫苗不消毒。", "正確答案"] },
+  { topicNo: 24, q: "非傳染病的特點是？", options: ["不會在人與人之間傳播", "由病原體引起", "一定經飛沫傳播", "可以透過空氣傳播"], correct: 0, reasons: ["正確答案", "非傳染病不由病原體引起。", "非傳染病不經飛沫傳播。", "非傳染病不經空氣傳播。"] },
+  { topicNo: 24, q: "以下哪項屬於非傳染病？", options: ["霍亂", "肺結核", "糖尿病", "瘧疾"], correct: 2, reasons: ["霍亂是傳染病。", "肺結核是傳染病。", "正確答案", "瘧疾是傳染病。"] },
+  { topicNo: 24, q: "冠心病的主要成因是？", options: ["冠狀動脈過粗", "冠狀動脈被脂肪／膽固醇沉積阻塞", "心臟肌肉過多", "血液中氧氣過多"], correct: 1, reasons: ["冠狀動脈狹窄或阻塞才是問題。", "正確答案", "冠心病與心肌過多無關。", "氧氣過多不是病因。"] },
+  { topicNo: 24, q: "以下哪項是高血壓的風險因素？", options: ["低鹽飲食", "恆常運動", "多吃蔬果", "高鹽飲食"], correct: 3, reasons: ["低鹽有助降血壓。", "運動有助降血壓。", "蔬果有助健康。", "正確答案"] },
+  { topicNo: 24, q: "肺癌最主要的風險因素是？", options: ["飲酒", "缺乏運動", "吸煙", "高鹽飲食"], correct: 2, reasons: ["飲酒主要傷肝。", "缺乏運動與肺癌關聯較小。", "正確答案", "高鹽與高血壓相關。"] },
+  { topicNo: 24, q: "以下哪項不是吸煙對健康的危害？", options: ["增加瘧疾的感染風險", "增加肺癌風險", "增加心血管疾病風險", "引起慢性阻塞性肺病"], correct: 0, reasons: ["正確答案", "吸煙增加肺癌風險。", "吸煙增加心血管病風險。", "吸煙可引起慢阻肺。"] },
+  { topicNo: 24, q: "癌症的基本特徵是？", options: ["細胞分裂減慢", "細胞正常死亡", "細胞停止生長", "細胞不受控制地分裂"], correct: 3, reasons: ["癌細胞分裂加快。", "癌細胞逃避正常死亡。", "癌細胞過度生長。", "正確答案"] },
+  { topicNo: 24, q: "以下哪項是致癌物質或因素？", options: ["維生素 C", "煙草中的焦油", "膳食纖維", "新鮮蔬果"], correct: 1, reasons: ["維生素 C 不是致癌物。", "正確答案", "膳食纖維有益健康。", "新鮮蔬果有助防癌。"] },
+  { topicNo: 24, q: "二型糖尿病的主要風險因素包括？", options: ["體重過輕", "過度運動", "肥胖和缺乏運動", "低糖飲食"], correct: 2, reasons: ["體重過輕不是風險因素。", "運動有助預防。", "正確答案", "低糖飲食有助預防。"] },
+  { topicNo: 24, q: "以下哪項是健康飲食的建議？", options: ["多吃蔬果，減少飽和脂肪攝取", "多吃高鹽食物", "多吃油炸食物", "完全不喝水"], correct: 0, reasons: ["正確答案", "高鹽增加高血壓風險。", "油炸食物增加心血管病風險。", "身體需要足夠水分。"] },
+  { topicNo: 24, q: "以下哪項有助預防心臟病？", options: ["吸煙", "高脂飲食", "長期不運動", "恆常運動和低脂飲食"], correct: 3, reasons: ["吸煙增加風險。", "高脂飲食增加風險。", "不運動增加風險。", "正確答案"] },
+  { topicNo: 24, q: "身體質量指數（BMI）用於？", options: ["量度血壓", "評估體重是否適中", "量度血糖", "量度肺活量"], correct: 1, reasons: ["BMI 不量血壓。", "正確答案", "BMI 不量血糖。", "BMI 不量肺活量。"] },
+  { topicNo: 24, q: "健康篩查的主要目的是？", options: ["治療末期疾病", "代替日常運動", "在症狀出現前及早發現疾病", "增加醫療開支"], correct: 2, reasons: ["篩查旨在早期發現。", "篩查不能代替運動。", "正確答案", "篩查目的不是增加開支。"] },
+  { topicNo: 24, q: "長期酗酒的其中一項嚴重後果是？", options: ["肝硬化", "肺結核", "瘧疾", "近視"], correct: 0, reasons: ["正確答案", "肺結核是傳染病。", "瘧疾由蚊子傳播。", "近視與酗酒無關。"] },
+  { topicNo: 24, q: "過量曝曬紫外線會增加哪種癌症的風險？", options: ["肺癌", "皮膚癌", "胃癌", "肝癌"], correct: 1, reasons: ["肺癌主要與吸煙有關。", "正確答案", "胃癌與飲食等因素有關。", "肝癌與肝炎病毒、酗酒等有關。"] },
+  { topicNo: 24, q: "傳染病與非傳染病最大的分別是？", options: ["嚴重程度", "患病年齡", "治療方法", "是否具傳染性"], correct: 3, reasons: ["兩者嚴重程度可不同，但不是本質分別。", "兩者都可影響不同年齡。", "治療方法不是本質分別。", "正確答案"] },
+  { topicNo: 24, q: "血液中膽固醇過高會增加？", options: ["動脈粥樣硬化的風險", "骨折的風險", "近視的風險", "貧血的風險"], correct: 0, reasons: ["正確答案", "膽固醇與骨折無直接關係。", "膽固醇與近視無關。", "膽固醇高不引起貧血。"] },
+  { topicNo: 24, q: "以下哪項不是恆常運動的益處？", options: ["增強心肺功能", "幫助控制體重", "減少血液循環", "紓緩壓力"], correct: 2, reasons: ["運動可增強心肺功能。", "運動有助控制體重。", "正確答案", "運動有助紓緩壓力。"] },
+  { topicNo: 24, q: "煙草中的尼古丁會？", options: ["使人昏睡", "使人上癮並加快心跳", "降低血壓", "增強免疫力"], correct: 1, reasons: ["尼古丁是興奮劑。", "正確答案", "尼古丁會使血壓上升。", "尼古丁不增強免疫。"] },
+  { topicNo: 24, q: "以下哪項是預防非傳染病的有效方法？", options: ["吸煙", "暴飲暴食", "長期缺乏睡眠", "健康飲食和恆常運動"], correct: 3, reasons: ["吸煙增加風險。", "暴飲暴食增加風險。", "缺乏睡眠不利健康。", "正確答案"] },
+  { topicNo: 25, q: "身體防禦病原體的第一道防線是？", options: ["皮膚和黏膜", "白血球", "抗體", "淋巴結"], correct: 0, reasons: ["正確答案", "白血球屬第二道防線。", "抗體屬專一性免疫。", "淋巴結屬免疫系統。"] },
+  { topicNo: 25, q: "皮膚如何防禦病原體？", options: ["分泌抗體", "產生記憶細胞", "形成物理屏障並分泌殺菌物質", "吞噬所有病毒"], correct: 2, reasons: ["皮膚不分泌抗體。", "記憶細胞由淋巴細胞產生。", "正確答案", "吞噬由吞噬細胞進行。"] },
+  { topicNo: 25, q: "吞噬細胞的作用是？", options: ["產生抗體", "吞噬並消化病原體（非專一性防禦）", "分泌激素", "製造紅血球"], correct: 1, reasons: ["產生抗體的是漿細胞。", "正確答案", "吞噬細胞不分泌激素。", "造血在紅骨髓。"] },
+  { topicNo: 25, q: "抗原是甚麼？", options: ["一種白血球", "一種抗體", "一種激素", "能引起免疫反應的物質（通常為外來蛋白質）"], correct: 3, reasons: ["抗原不是細胞。", "抗體是免疫反應的產物。", "抗原不是激素。", "正確答案"] },
+  { topicNo: 25, q: "抗體由哪種細胞產生？", options: ["吞噬細胞", "紅血球", "漿細胞（由 B 細胞分化）", "神經細胞"], correct: 2, reasons: ["吞噬細胞不產生抗體。", "紅血球運氧。", "正確答案", "神經細胞傳遞訊息。"] },
+  { topicNo: 25, q: "抗體的主要作用是？", options: ["專一地與相應抗原結合", "吞噬病原體", "分解所有蛋白質", "運送氧氣"], correct: 0, reasons: ["正確答案", "吞噬是吞噬細胞的功能。", "抗體具專一性，不分解所有蛋白質。", "運氧是紅血球。"] },
+  { topicNo: 25, q: "主動免疫與被動免疫的分別是？", options: ["主動免疫效果較短暫", "被動免疫由自身產生抗體", "兩者完全相同", "主動免疫由自身產生抗體，效果較持久"], correct: 3, reasons: ["主動免疫效果較持久。", "被動免疫的抗體來自外界。", "兩者機制不同。", "正確答案"] },
+  { topicNo: 25, q: "疫苗接種屬於？", options: ["天然被動免疫", "人工主動免疫", "天然主動免疫", "人工被動免疫"], correct: 1, reasons: ["疫苗是人工引入抗原。", "正確答案", "天然主動免疫是自然感染。", "被動免疫直接輸入抗體。"] },
+  { topicNo: 25, q: "疫苗的原理是？", options: ["直接輸入抗體", "輸入記憶細胞", "引入抗原，刺激身體產生抗體和記憶細胞", "殺死所有病原體"], correct: 2, reasons: ["輸入抗體是被動免疫。", "疫苗不直接輸入記憶細胞。", "正確答案", "疫苗不直接殺死所有病原體。"] },
+  { topicNo: 25, q: "再次接觸同一病原體時，身體會？", options: ["迅速大量產生抗體（再次反應）", "沒有反應", "反應比初次更慢", "永久失去免疫"], correct: 0, reasons: ["正確答案", "記憶細胞會快速反應。", "再次反應更快更強。", "免疫記憶會保留。"] },
+  { topicNo: 25, q: "母體抗體經胎盤傳給胎兒屬於？", options: ["人工主動免疫", "人工被動免疫", "天然主動免疫", "天然被動免疫"], correct: 3, reasons: ["不是人為接種。", "不是人為輸入抗體。", "胎兒不是自身產生抗體。", "正確答案"] },
+  { topicNo: 25, q: "注射抗毒血清（含現成抗體）屬於？", options: ["人工主動免疫", "人工被動免疫", "天然主動免疫", "天然被動免疫"], correct: 1, reasons: ["血清直接提供抗體。", "正確答案", "非自然感染。", "非天然來源。"] },
+  { topicNo: 25, q: "記憶細胞的作用是？", options: ["吞噬病原體", "分泌激素", "再次接觸相同抗原時迅速產生免疫反應", "運送氧氣"], correct: 2, reasons: ["吞噬由吞噬細胞負責。", "記憶細胞不分泌激素。", "正確答案", "運氧是紅血球。"] },
+  { topicNo: 25, q: "以下哪項屬於非專一性防禦？", options: ["吞噬作用", "抗體與抗原結合", "記憶細胞反應", "漿細胞產生抗體"], correct: 0, reasons: ["正確答案", "抗體反應是專一性。", "記憶細胞是專一性。", "漿細胞是專一性免疫。"] },
+  { topicNo: 25, q: "以下哪項屬於專一性防禦？", options: ["皮膚屏障", "抗體與特定抗原結合", "胃酸殺菌", "吞噬作用"], correct: 1, reasons: ["皮膚是非專一性。", "正確答案", "胃酸是非專一性。", "吞噬是非專一性。"] },
+  { topicNo: 25, q: "發炎反應（紅、腫、熱、痛）的作用是？", options: ["阻礙血液流動", "減少白血球供應", "降低局部溫度", "增加血流，吸引吞噬細胞到感染部位"], correct: 3, reasons: ["發炎時血流增加。", "發炎吸引更多白血球。", "發炎時局部溫度升高。", "正確答案"] },
+  { topicNo: 25, q: "呼吸道黏膜的防禦作用是？", options: ["分泌黏液黏住病原體，再由纖毛清除", "產生抗體", "分泌胃酸", "吞噬細菌"], correct: 0, reasons: ["正確答案", "黏膜主要靠黏液和纖毛。", "胃酸在胃中分泌。", "吞噬由吞噬細胞進行。"] },
+  { topicNo: 25, q: "胃酸在防禦中的角色是？", options: ["產生抗體", "製造記憶細胞", "殺死隨食物進入胃部的病原體", "吞噬病毒"], correct: 2, reasons: ["胃酸不產生抗體。", "胃酸不製造記憶細胞。", "正確答案", "胃酸靠酸性殺菌，非吞噬。"] },
+  { topicNo: 25, q: "淚液中的溶菌酶能？", options: ["溶解骨頭", "殺死部分細菌（化學屏障）", "產生紅血球", "傳遞神經脈衝"], correct: 1, reasons: ["溶菌酶不溶解骨。", "正確答案", "溶菌酶不產生紅血球。", "溶菌酶不傳遞神經。"] },
+  { topicNo: 25, q: "B 細胞被抗原活化後會？", options: ["變成紅血球", "直接吞噬病原體", "分泌激素", "分化成漿細胞，產生抗體"], correct: 3, reasons: ["B 細胞不變成紅血球。", "吞噬由吞噬細胞負責。", "B 細胞不分泌激素。", "正確答案"] },
+];
+
+</script>
+  <script>
+const QB3 = [
+  { topicNo: 26, q: "孟德爾雜交實驗中，「顯性性狀」的正確含義是甚麼？", options: ["只有在純合狀態下才表現的性狀", "在雜合個體中也能表現出來的性狀", "只出現在雄性個體的性狀", "永遠不會遺傳給下一代的性狀"], correct: 1, reasons: ["隱性性狀才須在純合狀態下表現。", "正確答案", "顯性性狀與性別無關。", "顯性性狀可遺傳給下一代。"] },
+  { topicNo: 26, q: "基因型為 Bb 的個體稱為什麼？", options: ["純合顯性", "純合隱性", "雜合", "無等位基因"], correct: 2, reasons: ["純合顯性應為 BB。", "純合隱性應為 bb。", "正確答案", "Bb 含兩個不同的等位基因。"] },
+  { topicNo: 26, q: "豚鼠中黑色毛（B）對白色毛（b）為顯性。Bb × bb 雜交，後代表現型比例為何？", options: ["黑毛：白毛 = 1:1", "黑毛：白毛 = 3:1", "全部黑毛", "全部白毛"], correct: 0, reasons: ["正確答案", "3:1 出現於 Bb × Bb。", "bb 親代提供 b 等位基因，後代非全黑。", "Bb 親代提供 B 等位基因，後代非全白。"] },
+  { topicNo: 26, q: "以下哪項是「表現型」？", options: ["個體的等位基因組合", "配子中基因的排列", "染色體上基因的位置", "個體可觀察到的特徵"], correct: 3, reasons: ["等位基因組合是基因型。", "配子中基因排列不是表現型。", "基因位置與表現型無關。", "正確答案"] },
+  { topicNo: 26, q: "ABO 血型系統中，IA 與 IB 的關係是甚麼？", options: ["IA 對 IB 完全顯性", "IB 對 IA 完全顯性", "兩者為共顯性", "兩者均為隱性"], correct: 2, reasons: ["IA 不對 IB 完全顯性。", "IB 不對 IA 完全顯性。", "正確答案", "兩者都是顯性等位基因。"] },
+  { topicNo: 26, q: "人類的性別由甚麼決定？", options: ["環境溫度", "母親的常染色體", "卵子的性染色體", "精子所含的性染色體（X 或 Y）"], correct: 3, reasons: ["人類性別與溫度無關。", "常染色體不決定性別。", "卵子只含 X 染色體。", "正確答案"] },
+  { topicNo: 26, q: "色盲是一種 X 連鎖隱性遺傳病，為何男性患者較多？", options: ["色盲基因位於 Y 染色體", "男性只有一條 X 染色體，隱性基因即可表現", "女性沒有 X 染色體", "男性較常接觸誘變原"], correct: 1, reasons: ["色盲基因位於 X 染色體。", "正確答案", "女性有兩條 X 染色體。", "患病率差異與性染色體數目有關，與誘變原無關。"] },
+  { topicNo: 26, q: "純種高莖豌豆（TT）與矮莖豌豆（tt）雜交，F1 的表現型是甚麼？", options: ["全部高莖", "全部矮莖", "高矮各半", "全為雜合矮莖"], correct: 0, reasons: ["正確答案", "高莖為顯性，F1 全為 Tt 表現高莖。", "F1 不會高矮各半。", "F1 表現高莖，不為矮莖。"] },
+  { topicNo: 26, q: "「等位基因」是指甚麼？", options: ["任何兩段 DNA", "不同染色體上的基因", "只存在於性染色體的基因", "位於同源染色體相同位置、控制同一性狀的不同基因形式"], correct: 3, reasons: ["等位基因特指同一基因座的不同形式。", "等位基因位於同源染色體相同位置。", "等位基因可位於常染色體。", "正確答案"] },
+  { topicNo: 26, q: "以下哪項屬「不連續變異」？", options: ["ABO 血型", "身高", "體重", "葉片長度"], correct: 0, reasons: ["正確答案", "身高呈連續分佈。", "體重呈連續分佈。", "葉片長度呈連續分佈。"] },
+  { topicNo: 26, q: "F2 出現 3:1 表現型比例的先決條件是甚麼？", options: ["親代均為純合隱性", "環境完全不影響性狀", "F1 為雜合且等位基因完全顯性", "只進行一次雜交"], correct: 2, reasons: ["親代純合隱性無法產生 3:1 比例。", "環境即使有影響，控制得宜仍接近 3:1。", "正確答案", "需大量後代統計，非只雜交一次。"] },
+  { topicNo: 26, q: "O 型母親（ii）與 AB 型父親（IAIB），孩子可能出現哪些血型？", options: ["只有 A 型", "A 型或 B 型", "只有 AB 型", "A、B、AB 或 O 型"], correct: 1, reasons: ["除 A 型外亦可為 B 型。", "正確答案", "父親必傳 IA 或 IB，孩子不可能為 AB 型。", "父親必傳 IA 或 IB，孩子不可能為 O 型。"] },
+  { topicNo: 26, q: "純合與雜合的區別在於甚麼？", options: ["純合含兩個相同等位基因，雜合含兩個不同等位基因", "純合只含一個等位基因", "雜合不含等位基因", "兩者無區別"], correct: 0, reasons: ["正確答案", "二倍體生物每個基因座有兩個等位基因。", "雜合含兩個不同等位基因。", "兩者有明顯區別。"] },
+  { topicNo: 26, q: "豌豆中圓粒（R）對皺粒（r）為顯性。Rr × rr 雜交，後代表現型比例為何？", options: ["全部圓粒", "圓粒：皺粒 = 1:1", "圓粒：皺粒 = 3:1", "全部皺粒"], correct: 1, reasons: ["rr 親代提供 r 等位基因，後代非全圓。", "正確答案", "3:1 出現於 Rr × Rr。", "Rr 親代提供 R 等位基因，後代非全皺。"] },
+  { topicNo: 26, q: "突變可能造成的後果是甚麼？", options: ["一定對生物有害", "一定對生物有利", "只影響體細胞", "可能產生新的等位基因"], correct: 3, reasons: ["突變可有害、有利或中性。", "突變可有害、有利或中性。", "生殖細胞的突變可遺傳。", "正確答案"] },
+  { topicNo: 26, q: "檢驗未知顯性表現型個體的基因型，最常用的測交方法是甚麼？", options: ["與純合顯性個體雜交", "與雜合個體雜交", "與純合隱性個體雜交", "與任意個體雜交"], correct: 2, reasons: ["與純合顯性雜交，後代全表現顯性，無法分辨。", "與雜合個體雜交結果不明確。", "正確答案", "測交必須使用純合隱性個體。"] },
+  { topicNo: 26, q: "以下哪項是「連續變異」的例子？", options: ["血型", "身高", "耳垂分離或緊貼", "舌頭能否捲曲"], correct: 1, reasons: ["血型屬不連續變異。", "正確答案", "耳垂類型屬不連續變異。", "能否捲舌屬不連續變異。"] },
+  { topicNo: 26, q: "一對夫婦都是某常染色體隱性遺傳病的雜合攜帶者，他們的孩子患病概率是多少？", options: ["1/4", "0", "1/2", "3/4"], correct: 0, reasons: ["正確答案", "雜合 × 雜合後代有 1/4 為患病純合。", "1/2 是孩子成為攜帶者的概率。", "3/4 是孩子不患病的概率。"] },
+  { topicNo: 26, q: "X 連鎖隱性遺傳病的特點是甚麼？", options: ["父親把致病基因傳給兒子", "女性患者比男性多", "男性患者的母親必帶有致病等位基因", "由 Y 染色體傳遞"], correct: 2, reasons: ["父親傳 Y 染色體給兒子，不傳 X 連鎖基因。", "男性患者較女性多。", "正確答案", "基因位於 X 染色體，不是 Y 染色體。"] },
+  { topicNo: 26, q: "孟德爾的「分離定律」指出甚麼？", options: ["配子含成對的等位基因", "所有性狀一起遺傳", "基因會與環境分離", "配子形成時等位基因對分離，每個配子只含其一"], correct: 3, reasons: ["配子只含等位基因對中的一個。", "等位基因分離，不同基因可獨立分配。", "分離定律與環境無關。", "正確答案"] },
+  { topicNo: 27, q: "DNA 的雙螺旋結構中，鹼基配對規則是甚麼？", options: ["腺嘌呤（A）配胸腺嘧啶（T），胞嘧啶（C）配鳥嘌呤（G）", "A 配 C，T 配 G", "A 配 G，C 配 T", "鹼基隨機配對"], correct: 0, reasons: ["正確答案", "A 與 C 不配對。", "A 與 G 不配對。", "鹼基配對具特定規則，非隨機。"] },
+  { topicNo: 27, q: "組成 DNA 核苷酸的三個部分不包括以下哪項？", options: ["磷酸", "脫氧核糖", "含氮鹼基", "氨基酸"], correct: 3, reasons: ["磷酸是核苷酸成分。", "脫氧核糖是 DNA 核苷酸成分。", "含氮鹼基是核苷酸成分。", "正確答案"] },
+  { topicNo: 27, q: "DNA 複製的方式是甚麼？", options: ["保守複製", "半保留複製", "分散複製", "完全不複製"], correct: 1, reasons: ["複製後每條新 DNA 含一條舊鏈，非保守。", "正確答案", "半保留複製中舊鏈完整保留，非分散。", "DNA 會複製。"] },
+  { topicNo: 27, q: "轉錄過程中，以 DNA 為模板合成甚麼？", options: ["DNA", "蛋白質", "mRNA", "tRNA 上的氨基酸"], correct: 2, reasons: ["合成 DNA 是複製。", "合成蛋白質是轉譯。", "正確答案", "氨基酸由 tRNA 攜帶，並非在轉錄中合成。"] },
+  { topicNo: 27, q: "基因中三個相連的鹼基（密碼子）決定甚麼？", options: ["一個核苷酸", "一個氨基酸", "一條多肽", "一個基因"], correct: 1, reasons: ["密碼子由三個核苷酸組成。", "正確答案", "多個密碼子共同編碼一條多肽。", "基因含多個密碼子。"] },
+  { topicNo: 27, q: "轉譯在哪個細胞結構上進行？", options: ["細胞核", "高爾基體", "核糖體", "溶酶體"], correct: 2, reasons: ["轉錄在細胞核進行。", "高爾基體負責修飾包裝蛋白質。", "正確答案", "溶酶體分解物質。"] },
+  { topicNo: 27, q: "mRNA 的密碼子 AUG 的作用是甚麼？", options: ["起始密碼子，編碼甲硫氨酸", "終止密碼子", "編碼脯氨酸", "不具功能"], correct: 0, reasons: ["正確答案", "AUG 是起始密碼子，不是終止密碼子。", "AUG 編碼甲硫氨酸，不是脯氨酸。", "AUG 具起始功能。"] },
+  { topicNo: 27, q: "tRNA 的功能是甚麼？", options: ["合成 mRNA", "複製 DNA", "組成核糖體", "攜帶特定氨基酸到核糖體"], correct: 3, reasons: ["mRNA 由 RNA 聚合酶合成。", "DNA 由 DNA 聚合酶複製。", "核糖體由 rRNA 和蛋白質組成。", "正確答案"] },
+  { topicNo: 27, q: "以下哪項是 DNA 與 RNA 的區別？", options: ["DNA 含核糖，RNA 含脫氧核糖", "DNA 是單鏈，RNA 是雙鏈", "RNA 含尿嘧啶（U）而 DNA 含胸腺嘧啶（T）", "DNA 含氨基酸，RNA 不含"], correct: 2, reasons: ["DNA 含脫氧核糖，RNA 含核糖。", "DNA 是雙鏈，RNA 通常單鏈。", "正確答案", "DNA 和 RNA 都不含氨基酸。"] },
+  { topicNo: 27, q: "基因突變中「取代」突變可能導致甚麼？", options: ["可能改變一個密碼子，從而改變氨基酸序列", "必定令蛋白質失去功能", "必定增加染色體數目", "必定導致死亡"], correct: 0, reasons: ["正確答案", "取代可能造成同義突變或保守改變，未必失功能。", "基因突變不改變染色體數目。", "突變未必致死。"] },
+  { topicNo: 27, q: "遺傳密碼具「簡併性」是指甚麼？", options: ["每個密碼子編碼多個氨基酸", "密碼子由四個鹼基組成", "所有生物用相同密碼子", "多個密碼子可編碼同一氨基酸"], correct: 3, reasons: ["每個密碼子只編碼一個氨基酸。", "密碼子由三個鹼基組成。", "所有生物用相同密碼子是普遍性，不是簡併性。", "正確答案"] },
+  { topicNo: 27, q: "在轉譯中，氨基酸之間的鍵稱為什麼？", options: ["氫鍵", "肽鍵", "離子鍵", "磷酸二酯鍵"], correct: 1, reasons: ["氫鍵連接 DNA 兩鏈的鹼基。", "正確答案", "離子鍵非蛋白質主鏈的鍵。", "磷酸二酯鍵連接核苷酸。"] },
+  { topicNo: 27, q: "哪種突變會導致閱讀框移動（移碼突變）？", options: ["單一鹼基取代", "染色體倒位", "整條染色體複製", "插入或刪除一個或兩個鹼基"], correct: 3, reasons: ["取代通常不移動閱讀框。", "染色體倒位屬染色體突變，不一定移碼。", "染色體複製不移動閱讀框。", "正確答案"] },
+  { topicNo: 27, q: "DNA 複製時，新鏈合成的方向是甚麼？", options: ["3' → 5'", "5' → 3'", "隨機方向", "由中間向兩端"], correct: 1, reasons: ["新鏈沿 5' → 3' 方向延長。", "正確答案", "合成方向固定。", "合成由 5' 端向 3' 端延長。"] },
+  { topicNo: 27, q: "以下哪項關於「非編碼 DNA」的敘述是正確的？", options: ["完全不具任何功能", "編碼所有蛋白質", "佔人類基因組相當比例，部分具調控功能", "只存在於細菌"], correct: 2, reasons: ["部分非編碼 DNA 具調控功能，非完全無用。", "編碼蛋白質的是基因的編碼區。", "正確答案", "真核生物基因組含大量非編碼 DNA。"] },
+  { topicNo: 27, q: "轉錄時，RNA 聚合酶的作用是甚麼？", options: ["沿 DNA 模板合成互補的 mRNA", "把氨基酸連接成多肽", "複製整條染色體", "把 mRNA 剪接成 DNA"], correct: 0, reasons: ["正確答案", "連接氨基酸是核糖體的功能。", "RNA 聚合酶不複製染色體。", "RNA 聚合酶合成 RNA，不把 mRNA 變成 DNA。"] },
+  { topicNo: 27, q: "遺傳密碼具「普遍性」是指甚麼？", options: ["幾乎所有生物共用同一套密碼子表", "密碼子可被多個氨基酸共用", "每種生物有獨特密碼", "密碼子只存在於真核生物"], correct: 0, reasons: ["正確答案", "簡併性指多個密碼子編碼同一氨基酸。", "遺傳密碼具普遍性，各生物大致相同。", "原核生物亦使用遺傳密碼。"] },
+  { topicNo: 27, q: "蛋白質合成中，mRNA 上的「終止密碼子」有何作用？", options: ["編碼甲硫氨酸", "啟動轉譯", "使轉譯停止，不編碼氨基酸", "由 tRNA 反密碼子翻譯成氨基酸"], correct: 2, reasons: ["甲硫氨酸由 AUG 編碼。", "啟動由起始密碼子負責。", "正確答案", "終止密碼子不對應任何 tRNA 氨基酸。"] },
+  { topicNo: 27, q: "DNA 分子的兩條鏈靠甚麼作用力維持在一起？", options: ["肽鍵", "鹼基之間的氫鍵", "磷酸二酯鍵", "離子鍵"], correct: 1, reasons: ["肽鍵連接氨基酸。", "正確答案", "磷酸二酯鍵連接同一鏈的核苷酸。", "離子鍵非主要作用力。"] },
+  { topicNo: 27, q: "「一基因一多肽」的概念是指甚麼？", options: ["每個基因由一條多肽組成", "每條染色體只有一個基因", "每個氨基酸由一個基因編碼", "一個基因的鹼基序列決定一條多肽的氨基酸序列"], correct: 3, reasons: ["基因由 DNA 組成，不是由多肽組成。", "染色體含多個基因。", "一個基因編碼一條多肽，非一個氨基酸。", "正確答案"] },
+  { topicNo: 28, q: "重組 DNA 技術中，被稱為「分子剪刀」的是甚麼？", options: ["DNA 連接酶", "DNA 聚合酶", "限制酶", "解旋酶"], correct: 2, reasons: ["連接酶是「分子膠水」。", "聚合酶合成 DNA 鏈。", "正確答案", "解旋酶分開雙鏈，不切割。"] },
+  { topicNo: 28, q: "把目標基因與載體連接起來的酶是甚麼？", options: ["DNA 連接酶", "限制酶", "RNA 聚合酶", "蛋白酶"], correct: 0, reasons: ["正確答案", "限制酶負責切割。", "RNA 聚合酶合成 RNA。", "蛋白酶分解蛋白質。"] },
+  { topicNo: 28, q: "常用作載體的質粒通常來自哪類生物？", options: ["病毒", "真菌", "動物細胞", "細菌"], correct: 3, reasons: ["病毒載體亦存在，但常用質粒來自細菌。", "質粒通常來自細菌，不是真菌。", "質粒通常來自細菌，不是動物細胞。", "正確答案"] },
+  { topicNo: 28, q: "凝膠電泳分離 DNA 片段的原理是甚麼？", options: ["按片段的鹼基序列排序", "按片段大小分離，較小片段移動較快", "按片段顏色分離", "按片段溫度分離"], correct: 1, reasons: ["電泳按大小而非序列分離。", "正確答案", "電泳不按顏色分離。", "電泳與溫度無關。"] },
+  { topicNo: 28, q: "利用細菌生產人類胰島素的步驟中，目標基因是甚麼？", options: ["細菌的胰島素基因", "人類的抗生素抗性基因", "質粒的複製基因", "人類的胰島素基因"], correct: 3, reasons: ["細菌本身無人類胰島素基因。", "抗性基因用作篩選標記，非產物。", "複製基因令質粒可複製，非產物。", "正確答案"] },
+  { topicNo: 28, q: "DNA 指紋分析最常用於甚麼？", options: ["量度血糖濃度", "法證科學中鑑定個體身份", "檢測維生素缺乏", "測量血壓"], correct: 1, reasons: ["DNA 指紋不量度血糖。", "正確答案", "維生素檢測與 DNA 無關。", "血壓與 DNA 指紋無關。"] },
+  { topicNo: 28, q: "PCR（聚合酶鏈反應）的用途是甚麼？", options: ["合成蛋白質", "切割 DNA", "大量擴增特定 DNA 片段", "把 DNA 轉錄成 RNA"], correct: 2, reasons: ["PCR 不合成蛋白質。", "切割 DNA 是限制酶。", "正確答案", "PCR 擴增 DNA，不是轉錄。"] },
+  { topicNo: 28, q: "基因治療的目的是甚麼？", options: ["把正常基因引入病人細胞以治療遺傳病", "改變病人的飲食習慣", "移除所有細菌", "增加染色體數目"], correct: 0, reasons: ["正確答案", "基因治療針對基因，非飲食。", "基因治療不移除細菌。", "基因治療不增加染色體數目。"] },
+  { topicNo: 28, q: "轉基因生物是指甚麼？", options: ["含有來自其他物種基因的生物", "只進行有性生殖的生物", "完全不含 DNA 的生物", "只生活在實驗室的生物"], correct: 0, reasons: ["正確答案", "轉基因與生殖方式無關。", "所有生物都含 DNA。", "轉基因生物可於田間種植或飼養。"] },
+  { topicNo: 28, q: "重組 DNA 技術中，篩選成功轉化的細菌常用甚麼方法？", options: ["觀察細菌顏色變化", "測量細菌重量", "抗生素抗性標記基因", "加熱細菌"], correct: 2, reasons: ["顏色變化不是主要篩選方法。", "重量與轉化無關。", "正確答案", "加熱不能篩選轉化細菌。"] },
+  { topicNo: 28, q: "利用細菌生產人類蛋白質的優點是甚麼？", options: ["細菌可生產任何蛋白質且不需修改基因", "可大量、廉價地生產純淨的人類蛋白質", "細菌不會產生廢物", "產品一定沒有副作用"], correct: 1, reasons: ["細菌需先轉入人類基因。", "正確答案", "發酵仍會產生副產品。", "產品可能有免疫原性等副作用。"] },
+  { topicNo: 28, q: "凝膠電泳中，DNA 片段向哪一極移動？", options: ["向負極，因 DNA 帶負電", "不移動", "向兩極隨機移動", "向正極，因 DNA 帶負電"], correct: 3, reasons: ["DNA 帶負電，向正極移動。", "DNA 在電場中會移動。", "移動方向固定。", "正確答案"] },
+  { topicNo: 28, q: "以下哪項不是基因工程的應用？", options: ["生產胰島素", "用抗生素治療所有病毒性疾病", "改良農作物抗蟲", "製造疫苗"], correct: 1, reasons: ["生產胰島素是基因工程應用。", "正確答案", "抗蟲作物是基因工程應用。", "重組疫苗是基因工程應用。"] },
+  { topicNo: 28, q: "限制酶切割 DNA 的位點有何特點？", options: ["隨機切割任何位置", "只切割 RNA", "只切割蛋白質", "辨認特定鹼基序列後切割"], correct: 3, reasons: ["限制酶辨認特定序列，非隨機。", "限制酶切割 DNA，不是 RNA。", "限制酶不切割蛋白質。", "正確答案"] },
+  { topicNo: 28, q: "轉基因農作物的潛在好處是甚麼？", options: ["提高產量或抗蟲抗除草劑能力", "必定引致過敏", "減少基因多樣性", "完全不需要肥料"], correct: 0, reasons: ["正確答案", "過敏風險是需評估的問題，非必然好處。", "減少多樣性是潛在風險，非好處。", "轉基因作物仍需肥料。"] },
+  { topicNo: 28, q: "DNA 指紋分析中，個體間差異主要來自甚麼？", options: ["蛋白質的顏色", "染色體數目", "非編碼重複序列的長度差異", "血型"], correct: 2, reasons: ["DNA 指紋分析的不是蛋白質顏色。", "正常個體染色體數目相同。", "正確答案", "DNA 指紋與血型無關。"] },
+  { topicNo: 28, q: "基因工程中「載體」的作用是甚麼？", options: ["提供能量給細胞", "殺死宿主細胞", "把目標基因帶入宿主細胞", "分解目標基因"], correct: 2, reasons: ["載體不提供能量。", "載體不殺死宿主。", "正確答案", "載體不分解基因。"] },
+  { topicNo: 28, q: "人類基因組計劃的目標是甚麼？", options: ["改變所有人類基因", "測定人類基因組的全部鹼基序列", "複製人類", "消滅所有疾病"], correct: 1, reasons: ["計劃是測序，非改變基因。", "正確答案", "計劃不是複製人類。", "計劃不直接消滅疾病。"] },
+  { topicNo: 28, q: "基因工程生產的胰島素與豬胰島素相比有何優點？", options: ["含有更多雜質", "更難大量生產", "會引起更多過敏", "與人類胰島素結構相同，較少引起免疫反應"], correct: 3, reasons: ["重組胰島素純度高，雜質少。", "重組技術可大量生產。", "重組胰島素過敏較少。", "正確答案"] },
+  { topicNo: 28, q: "「克隆」（無性繁殖系）是指甚麼？", options: ["基因組成相同的一群個體或細胞", "基因組成完全不同的一群個體", "只存在於植物", "必須經有性生殖產生"], correct: 0, reasons: ["正確答案", "克隆個體基因組成相同。", "動物亦可克隆。", "克隆是無性生殖。"] },
+  { topicNo: 29, q: "生物多樣性不包括以下哪一層面？", options: ["物種多樣性", "遺傳多樣性", "生態系統多樣性", "岩石多樣性"], correct: 3, reasons: ["物種多樣性是其中一層。", "遺傳多樣性是其中一層。", "生態系統多樣性是其中一層。", "正確答案"] },
+  { topicNo: 29, q: "同一物種內不同個體間的基因差異屬於甚麼？", options: ["物種多樣性", "遺傳多樣性", "生態系統多樣性", "生境多樣性"], correct: 1, reasons: ["物種多樣性指不同物種的數目。", "正確答案", "生態系統多樣性指不同生境與群落。", "生境多樣性指棲息地類型。"] },
+  { topicNo: 29, q: "雙名法中，學名由哪兩部分組成？", options: ["屬名 + 種名", "科名 + 屬名", "目名 + 科名", "界名 + 門名"], correct: 0, reasons: ["正確答案", "雙名法不包括科名在前。", "雙名法不包括目名、科名。", "雙名法不包括界名、門名。"] },
+  { topicNo: 29, q: "五界分類系統不包括以下哪項？", options: ["原核生物界", "真菌界", "病毒界", "原生生物界"], correct: 2, reasons: ["原核生物界是五界之一。", "真菌界是五界之一。", "正確答案", "原生生物界是五界之一。"] },
+  { topicNo: 29, q: "香港常見的「馬蹄蟹」屬於節肢動物，其特徵是甚麼？", options: ["具外骨骼和分節附肢", "具脊椎", "身體柔軟無殼", "終生生活在淡水"], correct: 0, reasons: ["正確答案", "節肢動物無脊椎。", "節肢動物具外骨骼。", "馬蹄蟹主要棲息於沿海水域。"] },
+  { topicNo: 29, q: "生境破壞對生物多樣性的影響是甚麼？", options: ["增加物種數目", "沒有影響", "減少生物的棲息地，導致物種減少", "只影響植物"], correct: 2, reasons: ["生境破壞會減少物種，非增加。", "生境破壞影響深遠。", "正確答案", "動物亦受影響。"] },
+  { topicNo: 29, q: "「特有種」是指甚麼？", options: ["分佈遍佈全球的物種", "已滅絕的物種", "只存在於動物園的物種", "只於特定地區自然分佈的物種"], correct: 3, reasons: ["特有種分佈局限。", "特有種未滅絕。", "特有種存在於自然生境。", "正確答案"] },
+  { topicNo: 29, q: "外來入侵物種的危害是甚麼？", options: ["增加本地物種數量", "與本地物種競爭，威脅本地生態", "沒有影響", "改善土壤肥力"], correct: 1, reasons: ["入侵種通常威脅本地種。", "正確答案", "入侵種可造成嚴重影響。", "入侵種不一定改善土壤。"] },
+  { topicNo: 29, q: "保護生物多樣性最根本的方法是甚麼？", options: ["把所有動物關進動物園", "保護自然生境", "大量引入外來物種", "停止一切研究"], correct: 1, reasons: ["遷地保護是輔助，不能取代自然生境。", "正確答案", "引入外來種可能危害生態。", "科學研究有助保育。"] },
+  { topicNo: 29, q: "生物多樣性對人類的直接價值不包括以下哪項？", options: ["提供食物", "提供藥物原料", "提供木材等資源", "增加空氣污染"], correct: 3, reasons: ["食物是多樣性的直接價值。", "藥物原料是直接價值。", "木材是直接價值。", "正確答案"] },
+  { topicNo: 29, q: "真菌與植物的主要區別是甚麼？", options: ["真菌能進行光合作用", "真菌有葉綠體", "真菌以吸收方式獲取營養，不能光合作用", "真菌有根莖葉"], correct: 2, reasons: ["真菌不能光合作用。", "真菌沒有葉綠體。", "正確答案", "真菌無根莖葉分化。"] },
+  { topicNo: 29, q: "遺傳多樣性高對物種有何好處？", options: ["增加族群適應環境變化的能力", "令所有個體完全相同", "降低適應能力", "沒有好處"], correct: 0, reasons: ["正確答案", "遺傳多樣性高代表個體差異大。", "遺傳多樣性高提高適應力。", "遺傳多樣性高有利族群生存。"] },
+  { topicNo: 29, q: "以下哪項是香港的保育措施？", options: ["把所有郊野公園改為住宅", "大量引入外來物種", "設立郊野公園和海岸公園", "清除所有植物"], correct: 2, reasons: ["改為住宅會破壞生境。", "引入外來種危害生態。", "正確答案", "清除植物破壞生態。"] },
+  { topicNo: 29, q: "分類階層由大至小的正確排列是甚麼？", options: ["界 → 門 → 綱 → 目 → 科 → 屬 → 種", "種 → 屬 → 科 → 目 → 綱 → 門 → 界", "門 → 界 → 綱 → 目", "科 → 屬 → 種 → 界"], correct: 0, reasons: ["正確答案", "順序應由大至小。", "界最大，應排最前。", "順序錯誤。"] },
+  { topicNo: 29, q: "物種滅絕的自然原因不包括以下哪項？", options: ["氣候變化", "人類過度捕獵", "火山爆發", "生境自然變遷"], correct: 1, reasons: ["氣候變化是自然原因之一。", "正確答案", "火山爆發是自然原因。", "生境自然變遷是自然原因。"] },
+  { topicNo: 29, q: "「原生生物界」的生物特點是甚麼？", options: ["都是多細胞", "都有細胞壁", "都能光合作用", "多為單細胞真核生物，包括藻類和原生動物"], correct: 3, reasons: ["原生生物多為單細胞。", "並非全部有細胞壁。", "只有藻類能光合作用。", "正確答案"] },
+  { topicNo: 29, q: "生物多樣性高的生態系統通常有何特點？", options: ["較不穩定", "物種間無關係", "生產力較低", "較穩定，能承受較大環境變化"], correct: 3, reasons: ["多樣性高通常較穩定。", "物種間關係複雜。", "多樣性高通常生產力較高。", "正確答案"] },
+  { topicNo: 29, q: "紅樹林的重要生態功能是甚麼？", options: ["提供大量淡水", "淨化空氣中的二氧化碳", "為多種生物提供棲息地，並保護海岸", "增加土壤侵蝕"], correct: 2, reasons: ["紅樹林生長於鹹淡水交界，不提供淡水。", "淨化空氣非其主要功能。", "正確答案", "紅樹林可減少侵蝕。"] },
+  { topicNo: 29, q: "科學家估計全球物種數目仍有大量未被發現，主要原因是甚麼？", options: ["許多生境如深海和熱帶雨林尚未被充分探索", "所有物種已被記錄", "物種不會滅絕", "分類學已停止發展"], correct: 0, reasons: ["正確答案", "尚有大量物種未被記錄。", "物種會滅絕。", "分類學持續發展。"] },
+  { topicNo: 29, q: "瀕危物種的「遷地保護」例子是甚麼？", options: ["設立郊野公園", "在動物園飼養繁殖後再放歸", "立法禁止捕獵", "植樹造林"], correct: 1, reasons: ["郊野公園屬就地保護。", "正確答案", "立法禁止捕獵屬保育措施，非遷地保護。", "植樹屬生境修復。"] },
+  { topicNo: 30, q: "巴斯德的鵝頸瓶實驗證明了甚麼？", options: ["生命只能來自既有的生命（生物發生說）", "生命可自然發生", "微生物不需空氣", "煮沸不能殺死微生物"], correct: 0, reasons: ["正確答案", "實驗否定自然發生說。", "微生物需要空氣，鵝頸瓶容許空氣進入。", "煮沸可殺死微生物。"] },
+  { topicNo: 30, q: "米勒-尤里實驗模擬了甚麼？", options: ["細胞分裂", "光合作用", "早期地球大氣中形成有機分子的可能過程", "恐龍滅絕"], correct: 2, reasons: ["實驗不模擬細胞分裂。", "實驗不模擬光合作用。", "正確答案", "實驗與恐龍無關。"] },
+  { topicNo: 30, q: "化石記錄支持進化的原因是甚麼？", options: ["化石與現生生物完全相同", "較古老岩層的化石結構較簡單，顯示生物隨時間改變", "化石都是人為製造", "化石沒有科學價值"], correct: 1, reasons: ["化石顯示生物隨時間改變，非完全相同。", "正確答案", "化石是自然形成的。", "化石是進化的重要證據。"] },
+  { topicNo: 30, q: "「同源結構」是指甚麼？", options: ["功能相同但來源不同的結構", "外觀完全相同的結構", "只在植物出現的結構", "來源相同但功能可能不同的結構"], correct: 3, reasons: ["功能相同來源不同是「同功結構」。", "同源結構外觀未必相同。", "同源結構存在於動物等。", "正確答案"] },
+  { topicNo: 30, q: "人的手臂與蝙蝠的翅膀是甚麼結構？", options: ["同功結構", "無關結構", "同源結構", "退化結構"], correct: 2, reasons: ["同功結構來源不同，此兩者來源相同。", "兩者具共同祖先來源。", "正確答案", "退化結構是失去功能的殘留結構。"] },
+  { topicNo: 30, q: "退化器官的例子是甚麼？", options: ["人類的闌尾", "人類的心臟", "鳥的翅膀", "魚的鰓"], correct: 0, reasons: ["正確答案", "心臟具重要功能，非退化。", "鳥翅膀具飛行功能。", "魚鰓具呼吸功能。"] },
+  { topicNo: 30, q: "比較不同生物的 DNA 鹼基序列可推斷甚麼？", options: ["生物的年齡", "生物的大小", "生物的顏色", "生物之間的進化親緣關係"], correct: 3, reasons: ["DNA 序列不顯示年齡。", "DNA 序列不顯示大小。", "DNA 序列不顯示顏色。", "正確答案"] },
+  { topicNo: 30, q: "鳥的翅膀與昆蟲的翅膀是甚麼結構？", options: ["同源結構", "同功結構", "退化結構", "化石結構"], correct: 1, reasons: ["兩者來源不同，是同功結構。", "正確答案", "兩者具功能，非退化。", "此兩者非化石。"] },
+  { topicNo: 30, q: "胚胎學證據支持進化的例子是甚麼？", options: ["不同脊椎動物胚胎毫無相似", "脊椎動物胚胎早期具有相似的鰓裂和尾巴", "胚胎不含遺傳物質", "胚胎發育與進化無關"], correct: 1, reasons: ["脊椎動物胚胎早期相似。", "正確答案", "胚胎含遺傳物質。", "胚胎相似性支持共同祖先。"] },
+  { topicNo: 30, q: "地球早期大氣與現今大氣的主要分別是甚麼？", options: ["早期大氣含大量氧氣", "早期大氣與現今相同", "早期大氣不含任何氣體", "早期大氣缺乏氧氣，含甲烷、氨等氣體"], correct: 3, reasons: ["早期大氣缺氧。", "早期大氣成分不同。", "早期大氣含多種氣體。", "正確答案"] },
+  { topicNo: 30, q: "化石最常見於哪類岩石？", options: ["沉積岩", "火成岩", "花崗岩", "玄武岩"], correct: 0, reasons: ["正確答案", "火成岩高溫形成，不利化石保存。", "花崗岩是火成岩。", "玄武岩是火成岩。"] },
+  { topicNo: 30, q: "澳洲有袋類動物因與其他大陸隔離而獨特演化，這支持甚麼？", options: ["生物地理分佈與進化無關", "所有大陸物種相同", "地理隔離導致不同進化路線", "物種不會受地理影響"], correct: 2, reasons: ["地理分佈是進化證據。", "各大陸物種不同。", "正確答案", "地理隔離影響進化。"] },
+  { topicNo: 30, q: "「自然發生說」的錯誤在於甚麼？", options: ["認為生命來自太空", "認為生命由神創造", "認為生命來自既有生命", "認為生命可從無生命物質自然產生"], correct: 3, reasons: ["生命來自太空是胚種論，非自然發生說。", "神創論非自然發生說。", "生物發生說才認為生命來自既有生命。", "正確答案"] },
+  { topicNo: 30, q: "比較蛋白質氨基酸序列差異可推斷甚麼？", options: ["生物的食物", "生物進化分歧的時間（差異愈小親緣愈近）", "生物的年齡", "生物的體重"], correct: 1, reasons: ["氨基酸序列不顯示食物。", "正確答案", "序列差異不顯示年齡。", "序列差異不顯示體重。"] },
+  { topicNo: 30, q: "化石記錄不完整的原因是甚麼？", options: ["所有生物死後都會形成化石", "化石不會被侵蝕", "只有少數生物死後條件合適才能形成化石", "化石永不失散"], correct: 2, reasons: ["多數生物死後不形成化石。", "化石會被侵蝕破壞。", "正確答案", "化石會因侵蝕而散失。"] },
+  { topicNo: 30, q: "生物發生說與自然發生說的主要分別是甚麼？", options: ["生物發生說認為生命來自既有生命，自然發生說認為生命可自然產生", "兩者完全相同", "生物發生說認為生命自然產生", "自然發生說認為生命來自既有生命"], correct: 0, reasons: ["正確答案", "兩者相反。", "生物發生說認為生命來自既有生命。", "自然發生說認為生命可自然產生。"] },
+  { topicNo: 30, q: "米勒-尤里實驗產生了甚麼？", options: ["氨基酸等有機分子", "完整的細胞", "蛋白質", "DNA"], correct: 0, reasons: ["正確答案", "實驗只產生有機分子，非細胞。", "實驗未產生完整蛋白質。", "實驗未產生 DNA。"] },
+  { topicNo: 30, q: "進化論中「共同祖先」的證據不包括以下哪項？", options: ["同源結構", "不同生物的骨骼由相同元素組成", "DNA 序列相似性", "胚胎發育相似性"], correct: 1, reasons: ["同源結構是證據。", "正確答案", "DNA 相似性是證據。", "胚胎相似性是證據。"] },
+  { topicNo: 30, q: "放射性定年法利用甚麼測定化石年齡？", options: ["化石的顏色", "化石的重量", "化石的硬度", "放射性同位素的衰變速率"], correct: 3, reasons: ["顏色不能定年。", "重量不能定年。", "硬度不能定年。", "正確答案"] },
+  { topicNo: 30, q: "進化的證據顯示生物多樣性來自甚麼？", options: ["突然的獨立創造", "不變的物種", "共同祖先經過長時間的漸變演化", "外來星球直接移植"], correct: 2, reasons: ["證據支持演化而非獨立創造。", "物種會隨時間改變。", "正確答案", "證據不支持外星移植說。"] },
+  { topicNo: 31, q: "達爾文自然選擇理論的基礎不包括以下哪項？", options: ["個體間存在變異", "所有個體都完全相同", "過度繁殖導致生存競爭", "有利變異的個體較易存活繁殖"], correct: 1, reasons: ["變異是自然選擇的基礎。", "正確答案", "過度繁殖是條件之一。", "適者生存是機制。"] },
+  { topicNo: 31, q: "進化所需的遺傳變異主要來源是甚麼？", options: ["環境直接改變基因", "個體努力適應", "學習行為", "基因突變和有性生殖的基因重組"], correct: 3, reasons: ["環境不直接改變基因。", "努力不能改變基因。", "學習行為不遺傳。", "正確答案"] },
+  { topicNo: 31, q: "工業黑化現象中，深色蛾在污染區較多存活的原因是甚麼？", options: ["深色蛾較大", "深色蛾較強壯", "深色蛾在深色樹幹上較不易被鳥捕食", "深色蛾繁殖較快"], correct: 2, reasons: ["存活與體型無關。", "存活與強壯無關。", "正確答案", "存活率差異來自偽裝，非繁殖速率。"] },
+  { topicNo: 31, q: "「適者生存」中「適者」是指甚麼？", options: ["最適應當時環境的個體", "體型最大的個體", "最兇猛的個體", "壽命最長的個體"], correct: 0, reasons: ["正確答案", "體型大未必適應環境。", "兇猛未必適應環境。", "壽命長未必代表適應。"] },
+  { topicNo: 31, q: "抗生素耐藥性細菌增多的原因是甚麼？", options: ["抗生素令細菌產生耐藥突變", "細菌學習了耐藥", "抗生素直接製造耐藥細菌", "抗生素選擇了本來已具耐藥性的細菌"], correct: 3, reasons: ["突變是隨機的，抗生素只作選擇。", "細菌不會學習。", "抗生素不製造耐藥細菌。", "正確答案"] },
+  { topicNo: 31, q: "物種形成的先決條件通常是甚麼？", options: ["族群數目無限增大", "完全沒有變異", "族群間出現生殖隔離", "所有個體自由交配"], correct: 2, reasons: ["數目增大不直接形成新種。", "變異是必要的。", "正確答案", "自由交配會阻止物種分化。"] },
+  { topicNo: 31, q: "地理隔離如何導致物種形成？", options: ["分隔的族群各自累積不同突變，最終不能交配繁殖", "地理隔離即時產生新種", "地理隔離令所有個體死亡", "地理隔離與物種形成無關"], correct: 0, reasons: ["正確答案", "新種形成需長時間累積差異。", "地理隔離不令個體死亡。", "地理隔離是物種形成常見機制。"] },
+  { topicNo: 31, q: "基因漂變是指甚麼？", options: ["基因定向改變以適應環境", "族群中基因頻率的隨機波動", "基因在物種間轉移", "個體選擇配偶"], correct: 1, reasons: ["基因漂變是隨機的，非定向。", "正確答案", "物種間轉移是基因流。", "選擇配偶是性選擇。"] },
+  { topicNo: 31, q: "以下哪項是「性選擇」的例子？", options: ["抗生素選擇耐藥細菌", "深色蛾在污染區存活較多", "雄性孔雀華麗尾羽吸引雌性", "長頸鹿長頸取得高處食物"], correct: 2, reasons: ["抗生素選擇是自然選擇。", "工業黑化是自然選擇。", "正確答案", "長頸是自然選擇。"] },
+  { topicNo: 31, q: "自然選擇直接作用的對象是甚麼？", options: ["個體的表現型", "個體的基因型", "整個生態系統", "無機環境"], correct: 0, reasons: ["正確答案", "自然選擇直接作用於表現型，再影響基因頻率。", "選擇作用於個體。", "選擇不直接作用於無機環境。"] },
+  { topicNo: 31, q: "族群中「基因頻率」的改變意味著甚麼？", options: ["族群沒有進化", "族群正在進化", "個體死亡", "物種立即滅絕"], correct: 1, reasons: ["基因頻率改變即進化的定義。", "正確答案", "基因頻率改變與個體死亡無必然關係。", "不一定滅絕。"] },
+  { topicNo: 31, q: "兩個族群若出現生殖隔離，這意味著甚麼？", options: ["牠們一定能交配繁殖", "牠們是同一個種", "牠們棲息地相同", "牠們已屬不同物種或正在形成不同物種"], correct: 3, reasons: ["生殖隔離指不能交配繁殖。", "生殖隔離的族群屬不同種。", "生殖隔離與棲息地無關。", "正確答案"] },
+  { topicNo: 31, q: "長頸鹿長頸的演化，達爾文的解釋是甚麼？", options: ["長頸個體較易取得食物而存活繁殖，長頸基因漸增", "長頸鹿努力伸長頸部而遺傳給後代", "長頸是突然產生的", "長頸與食物無關"], correct: 0, reasons: ["正確答案", "獲得性狀不遺傳。", "演化是漸進的。", "長頸有利取食高處樹葉。"] },
+  { topicNo: 31, q: "突變在進化中的角色是甚麼？", options: ["突變都是有害的", "突變提供遺傳變異，是進化的原材料", "突變不會遺傳", "突變只在植物出現"], correct: 1, reasons: ["突變可有害、中性或有利。", "正確答案", "生殖細胞突變可遺傳。", "所有生物均可突變。"] },
+  { topicNo: 31, q: "基因流是指甚麼？", options: ["基因在個體內複製", "基因突變", "基因漂變", "基因透過個體遷移在族群間流動"], correct: 3, reasons: ["複製不是基因流。", "突變不是基因流。", "漂變是隨機波動，不是遷移。", "正確答案"] },
+  { topicNo: 31, q: "抗藥細菌的出現說明了甚麼？", options: ["細菌能主動製造抗藥基因", "抗生素完全無效", "自然選擇可在短時間內改變族群", "細菌不會進化"], correct: 2, reasons: ["抗藥基因來自突變，非主動製造。", "抗生素仍對非耐藥菌有效。", "正確答案", "細菌可快速進化。"] },
+  { topicNo: 31, q: "物種的定義通常基於甚麼？", options: ["外觀完全相同", "能自然交配並產生具繁殖力的後代", "棲息於同一地方", "吃相同的食物"], correct: 1, reasons: ["外觀相同不一定是同種。", "正確答案", "同地未必同種。", "食性相同未必同種。"] },
+  { topicNo: 31, q: "自然選擇的結果是甚麼？", options: ["令個體變得完美", "令所有變異消失", "令有利於環境的等位基因在族群中更常見", "令物種停止變化"], correct: 2, reasons: ["自然選擇不產生完美個體。", "變異會持續存在。", "正確答案", "族群會持續演化。"] },
+  { topicNo: 31, q: "有性生殖促進進化的原因是甚麼？", options: ["透過基因重組增加後代的遺傳變異", "減少變異", "令後代與親代完全相同", "阻止突變"], correct: 0, reasons: ["正確答案", "有性生殖增加變異。", "後代與親代不同。", "有性生殖不阻止突變。"] },
+  { topicNo: 31, q: "如果環境長期穩定，自然選擇的結果通常是甚麼？", options: ["所有個體迅速滅絕", "演化停止", "基因突變消失", "族群被選擇至高度適應該環境"], correct: 3, reasons: ["穩定環境不一定滅絕。", "演化仍可緩慢進行。", "突變仍會發生。", "正確答案"] },
+  { topicNo: 32, q: "人體體温調節中樞位於何處？", options: ["延髓", "小腦", "下丘腦", "大腦皮層"], correct: 2, reasons: ["延髓控制心跳呼吸等，非體温中樞。", "小腦協調運動。", "正確答案", "大腦皮層負責高級功能。"] },
+  { topicNo: 32, q: "恆温動物與變温動物的區別是甚麼？", options: ["恆温動物體温隨環境變化", "恆温動物能維持相對穩定的體温", "變温動物能自行產熱", "兩者沒有區別"], correct: 1, reasons: ["恆温動物體温相對穩定。", "正確答案", "變温動物依賴環境熱能。", "兩者有明顯區別。"] },
+  { topicNo: 32, q: "天氣炎熱時，皮膚小動脈會有何變化？", options: ["舒張（血管舒張），增加皮膚血流散熱", "收縮，減少血流", "停止供血", "不受影響"], correct: 0, reasons: ["正確答案", "炎熱時應舒張以散熱。", "皮膚仍需供血。", "皮膚血管會調節。"] },
+  { topicNo: 32, q: "出汗的散熱原理是甚麼？", options: ["汗液是熱的", "汗液含有能量", "汗液阻塞毛孔", "汗液蒸發時帶走身體熱能"], correct: 3, reasons: ["散熱靠蒸發而非汗液溫度。", "散熱靠蒸發潛熱。", "出汗不阻塞毛孔。", "正確答案"] },
+  { topicNo: 32, q: "寒冷時，立毛肌收縮的作用是甚麼？", options: ["增加散熱", "使毛髮豎起，形成較厚絕緣空氣層", "排出汗液", "沒有作用"], correct: 1, reasons: ["立毛肌收縮減少散熱。", "正確答案", "立毛肌不排汗。", "豎毛有助保暖。"] },
+  { topicNo: 32, q: "寒冷時身體顫抖的作用是甚麼？", options: ["散熱", "消耗水分", "產生大量聲音", "肌肉快速收縮產生熱能"], correct: 3, reasons: ["顫抖是產熱而非散熱。", "顫抖不消耗水分散熱。", "顫抖目的非發聲。", "正確答案"] },
+  { topicNo: 32, q: "體温調節屬於甚麼機制？", options: ["正反饋", "沒有反饋", "負反饋", "開環控制"], correct: 2, reasons: ["體温調節是負反饋。", "體温調節有反饋。", "正確答案", "體温調節是閉環的負反饋。"] },
+  { topicNo: 32, q: "寒冷時皮膚血管的反應是甚麼？", options: ["血管收縮，減少皮膚血流以減少散熱", "血管舒張", "血流不變", "血管破裂"], correct: 0, reasons: ["正確答案", "舒張會增加散熱。", "寒冷時血流會減少。", "血管不會破裂。"] },
+  { topicNo: 32, q: "甲狀腺素在體温調節中的作用是甚麼？", options: ["降低代謝率", "抑制產熱", "減少心跳", "提高細胞代謝率，增加產熱"], correct: 3, reasons: ["甲狀腺素提高代謝率。", "甲狀腺素增加產熱。", "甲狀腺素增加心跳。", "正確答案"] },
+  { topicNo: 32, q: "發燒時體温調定點上升，身體的反應是甚麼？", options: ["出現顫抖等產熱反應令體温上升至新調定點", "立即大量散熱", "血管大量舒張", "體温下降"], correct: 0, reasons: ["正確答案", "調定點上升時身體會產熱。", "此時會收縮血管減少散熱。", "體温會上升至新調定點。"] },
+  { topicNo: 32, q: "皮膚內負責散熱的主要結構是甚麼？", options: ["毛囊", "汗腺和皮下血管", "皮脂腺", "角質層"], correct: 1, reasons: ["毛囊不散熱。", "正確答案", "皮脂腺分泌油脂，不散熱。", "角質層不散熱。"] },
+  { topicNo: 32, q: "下丘腦如何偵測體温？", options: ["透過皮膚痛覺感受器", "透過眼睛", "偵測流經其血液的溫度", "透過耳朵"], correct: 2, reasons: ["下丘腦偵測血液溫度。", "眼睛不偵測體温。", "正確答案", "耳朵不偵測體温。"] },
+  { topicNo: 32, q: "變温動物的特點是甚麼？", options: ["體温主要依賴外界環境熱能", "能維持恆定體温", "天氣寒冷時顫抖產熱", "大量出汗散熱"], correct: 0, reasons: ["正確答案", "變温動物體温隨環境變化。", "變温動物不顫抖產熱維持恆温。", "變温動物一般不出汗散熱。"] },
+  { topicNo: 32, q: "炎熱時，身體減少產熱的方式是甚麼？", options: ["顫抖", "增加甲狀腺素分泌", "減少肌肉活動", "血管收縮"], correct: 2, reasons: ["顫抖是產熱。", "甲狀腺素增加產熱。", "正確答案", "血管收縮減少散熱，不適用於炎熱。"] },
+  { topicNo: 32, q: "皮膚血管中的「動靜脈吻合」在散熱時有何作用？", options: ["關閉，減少血流", "沒有作用", "阻止出汗", "開放，讓更多血液流近皮膚表面散熱"], correct: 3, reasons: ["散熱時吻合支開放。", "吻合支有調節作用。", "吻合支與出汗無關。", "正確答案"] },
+  { topicNo: 32, q: "負反饋機制中，當體温低於正常時會怎樣？", options: ["身體啟動散熱反應", "身體啟動產熱反應令體温回升", "身體停止一切反應", "體温繼續下降"], correct: 1, reasons: ["體温低時應產熱。", "正確答案", "身體會作出調節。", "負反饋會令體温回升。"] },
+  { topicNo: 32, q: "皮膚在體温調節中兼具感受器與效應器，原因是甚麼？", options: ["皮膚只有神經", "皮膚不參與調節", "皮膚有溫度感受器，亦有汗腺和血管等效應器", "皮膚含腦細胞"], correct: 2, reasons: ["皮膚還有感受器和效應器。", "皮膚參與體温調節。", "正確答案", "皮膚不含腦細胞。"] },
+  { topicNo: 32, q: "出汗過多而沒有補充水分可能導致甚麼？", options: ["脫水", "體温過低", "血壓上升", "水腫"], correct: 0, reasons: ["正確答案", "出汗散熱不會致低體温。", "失水會令血容量下降。", "失水不導致水腫。"] },
+  { topicNo: 32, q: "劇烈運動時體温上升，身體主要散熱方式是甚麼？", options: ["顫抖", "增加出汗和皮膚血管舒張", "減少呼吸", "收縮血管"], correct: 1, reasons: ["運動時不顫抖。", "正確答案", "運動時呼吸會增加。", "運動時應舒張血管散熱。"] },
+  { topicNo: 32, q: "為甚麼在潮濕天氣下，人感到更熱？", options: ["溫度較低", "汗液蒸發較快", "血管收縮", "空氣濕度高，汗液蒸發慢，散熱效率低"], correct: 3, reasons: ["潮濕天氣未必溫度低。", "濕度高時蒸發慢。", "炎熱時血管舒張。", "正確答案"] },
+  { topicNo: 33, q: "腎臟的基本功能單位是甚麼？", options: ["腎小球", "腎盂", "腎動脈", "腎元"], correct: 3, reasons: ["腎小球是腎元一部分。", "腎盂收集尿液。", "腎動脈供血。", "正確答案"] },
+  { topicNo: 33, q: "超濾作用發生在何處？", options: ["集尿管", "亨利氏套", "鮑曼氏囊（腎小球）", "輸尿管"], correct: 2, reasons: ["集尿管進行水份重吸收。", "亨利氏套重吸收鹽和水。", "正確答案", "輸尿管只輸送尿液。"] },
+  { topicNo: 33, q: "超濾作用的動力是甚麼？", options: ["主動運輸", "腎小球內的高血壓", "滲透作用", "擴散作用"], correct: 1, reasons: ["超濾是被動的壓力過程。", "正確答案", "滲透與重吸收有關。", "擴散非主要動力。"] },
+  { topicNo: 33, q: "健康人的腎小球濾液（原尿）不含甚麼？", options: ["血細胞和大分子蛋白質", "葡萄糖", "尿素", "鹽"], correct: 0, reasons: ["正確答案", "葡萄糖可被濾出。", "尿素可被濾出。", "鹽可被濾出。"] },
+  { topicNo: 33, q: "葡萄糖主要在腎元哪部分被重吸收？", options: ["鮑曼氏囊", "集尿管", "近曲小管", "腎盂"], correct: 2, reasons: ["鮑曼氏囊進行過濾。", "集尿管主要調節水份。", "正確答案", "腎盂收集尿液。"] },
+  { topicNo: 33, q: "正常情況下，尿液不應含有甚麼？", options: ["葡萄糖", "尿素", "鹽", "水"], correct: 0, reasons: ["正確答案", "尿素是正常尿液成分。", "鹽是正常尿液成分。", "水是尿液主要成分。"] },
+  { topicNo: 33, q: "ADH（抗利尿激素）的作用是甚麼？", options: ["增加腎小球過濾率", "增加尿液產生", "降低血壓", "增加集尿管對水的通透性，減少尿量"], correct: 3, reasons: ["ADH 不增加過濾率。", "ADH 減少尿量。", "ADH 不直接降低血壓。", "正確答案"] },
+  { topicNo: 33, q: "身體缺水時，ADH 分泌會有何變化？", options: ["減少", "增加，令尿量減少以保存水份", "不變", "停止"], correct: 1, reasons: ["缺水時 ADH 增加。", "正確答案", "ADH 分泌會改變。", "缺水時 ADH 分泌增加，非停止。"] },
+  { topicNo: 33, q: "腎臟除了排泄，還有甚麼功能？", options: ["調節體內水份和鹽分的平衡", "產生消化酶", "儲存膽汁", "合成胰島素"], correct: 0, reasons: ["正確答案", "腎不產生消化酶。", "膽汁由肝產生儲於膽囊。", "胰島素由胰臟產生。"] },
+  { topicNo: 33, q: "血液中的尿素主要來自甚麼？", options: ["碳水化合物的代謝", "肝臟中氨基酸脫氨作用", "脂質消化", "呼吸作用"], correct: 1, reasons: ["碳水化合物代謝不產生尿素。", "正確答案", "脂質代謝不直接產生尿素。", "呼吸作用產生二氧化碳。"] },
+  { topicNo: 33, q: "滲透調節（水份調節）主要透過調節甚麼達成？", options: ["血糖濃度", "體温", "血液的水勢（含水量）", "血鈣濃度"], correct: 2, reasons: ["血糖由胰島素等調節。", "體温由下丘腦調節。", "正確答案", "血鈣由副甲狀腺素等調節。"] },
+  { topicNo: 33, q: "腎透析（洗腎）的原理是甚麼？", options: ["替代肝臟的功能", "增加食慾", "替代心臟", "利用半透膜擴散清除血液中的廢物"], correct: 3, reasons: ["透析替代腎功能，非肝。", "透析不影響食慾。", "透析不替代心臟。", "正確答案"] },
+  { topicNo: 33, q: "飲大量清水後，尿量會有何變化？", options: ["減少", "增加，因 ADH 分泌減少", "不變", "完全停止"], correct: 1, reasons: ["飲水後尿量增加。", "正確答案", "尿量會改變。", "尿量增加，非停止。"] },
+  { topicNo: 33, q: "尿崩症（糖尿病尿崩症）患者的特點是甚麼？", options: ["血糖過高", "產生大量胰島素", "血壓過高", "ADH 不足，排出大量稀釋尿液"], correct: 3, reasons: ["尿崩症與血糖無關。", "尿崩症與胰島素無關。", "尿崩症與血壓無直接關係。", "正確答案"] },
+  { topicNo: 33, q: "集尿管在 ADH 作用下，水份如何移動？", options: ["由集尿管滲透回周圍高滲的髓質血液", "由血液進入集尿管", "水份不移動", "水份被主動運輸到膀胱"], correct: 0, reasons: ["正確答案", "ADH 令水由管內回血液。", "ADH 作用下水會移動。", "水份移動靠滲透，非主動運輸到膀胱。"] },
+  { topicNo: 33, q: "腎元中「亨利氏套」的主要功能是甚麼？", options: ["過濾血液", "產生 ADH", "建立髓質的濃度梯度，有助濃縮尿液", "儲存尿液"], correct: 2, reasons: ["過濾在腎小球。", "ADH 由下丘腦產生、垂體釋放。", "正確答案", "尿液儲存於膀胱。"] },
+  { topicNo: 33, q: "血液流經腎臟時，腎靜脈與腎動脈相比有何不同？", options: ["含更多尿素", "含更多氧氣", "含更多葡萄糖", "含較少尿素"], correct: 3, reasons: ["腎靜脈尿素較少。", "腎靜脈氧氣較少。", "腎靜脈的葡萄糖濃度與腎動脈相近，不會更多。", "正確答案"] },
+  { topicNo: 33, q: "影響 ADH 分泌的主要刺激是甚麼？", options: ["血液水勢（含水量）變化", "血液溫度", "血液酸鹼度", "血糖濃度"], correct: 0, reasons: ["正確答案", "ADH 主要受滲透壓調節。", "ADH 不主要由酸鹼度調節。", "血糖由胰島素等調節。"] },
+  { topicNo: 33, q: "醛固酮（aldosterone）的作用是甚麼？", options: ["降低血壓", "增加尿量", "促進腎元重吸收鈉離子，從而保留水份", "促進葡萄糖重吸收"], correct: 2, reasons: ["醛固酮有助維持血壓。", "醛固酮減少尿量。", "正確答案", "葡萄糖重吸收不靠醛固酮。"] },
+  { topicNo: 33, q: "腎小球過濾膜的結構特點使其能過濾血液，原因是甚麼？", options: ["它完全不透水", "微血管壁和鮑曼氏囊內壁具小孔，容許小分子通過", "它只容許蛋白質通過", "它沒有微血管"], correct: 1, reasons: ["過濾膜透水。", "正確答案", "蛋白質不能通過。", "過濾膜緊貼微血管。"] },
+  { topicNo: 34, q: "氧氣在血液中主要靠甚麼運輸？", options: ["與紅血球內的血紅蛋白結合", "溶解於血漿", "與白蛋白結合", "以氣泡形式運輸"], correct: 0, reasons: ["正確答案", "溶解於血漿的氧量很少。", "氧不與白蛋白結合。", "氧不以氣泡運輸。"] },
+  { topicNo: 34, q: "血紅蛋白與氧結合後形成甚麼？", options: ["碳氧血紅蛋白", "氨基甲酸血紅蛋白", "還原血紅蛋白", "氧合血紅蛋白"], correct: 3, reasons: ["碳氧血紅蛋白是與一氧化碳結合。", "氨基甲酸血紅蛋白與二氧化碳有關。", "還原血紅蛋白是未結合氧的形態。", "正確答案"] },
+  { topicNo: 34, q: "二氧化碳在血液中的主要運輸形式是甚麼？", options: ["溶解於血漿", "與氧氣結合", "以碳酸氫根離子形式", "以氣泡形式"], correct: 2, reasons: ["溶解形式只佔小部分。", "二氧化碳不與氧結合。", "正確答案", "二氧化碳不以氣泡運輸。"] },
+  { topicNo: 34, q: "控制呼吸的中樞位於何處？", options: ["下丘腦", "延髓", "小腦", "大腦皮層"], correct: 1, reasons: ["下丘腦調節體温。", "正確答案", "小腦協調運動。", "大腦可隨意控制呼吸，但基本節律由延髓產生。"] },
+  { topicNo: 34, q: "血液中二氧化碳濃度升高會有何影響？", options: ["令呼吸減慢", "令血液變鹼", "沒有影響", "刺激呼吸中樞，令呼吸加快加深"], correct: 3, reasons: ["二氧化碳升高令呼吸加快。", "二氧化碳升高令血液變酸。", "二氧化碳是呼吸的主要調節因素。", "正確答案"] },
+  { topicNo: 34, q: "偵測血液二氧化碳濃度變化的感受器位於何處？", options: ["皮膚", "頸動脈體和主動脈體", "眼睛", "耳朵"], correct: 1, reasons: ["皮膚感受器偵測溫度觸覺。", "正確答案", "眼睛偵測光。", "耳朵偵測聲音和平衡。"] },
+  { topicNo: 34, q: "在組織中，氧合血紅蛋白會有何變化？", options: ["釋放氧氣，因組織氧分壓低", "吸收更多氧氣", "不變", "變成碳氧血紅蛋白"], correct: 0, reasons: ["正確答案", "組織氧分壓低，血紅蛋白釋氧。", "氧合血紅蛋白會解離。", "碳氧血紅蛋白與一氧化碳有關。"] },
+  { topicNo: 34, q: "劇烈運動時呼吸加快，主要原因是甚麼？", options: ["血液氧氣增加", "血液二氧化碳減少", "血液二氧化碳增加刺激呼吸中樞", "體温下降"], correct: 2, reasons: ["運動時血液氧氣可能下降。", "運動時二氧化碳增加。", "正確答案", "運動時體温上升。"] },
+  { topicNo: 34, q: "過度換氣（hyperventilation）會導致甚麼？", options: ["血液二氧化碳升高", "血液變酸", "血液二氧化碳過低，可能引致暈眩", "血液氧氣過低"], correct: 2, reasons: ["過度換氣排出過多二氧化碳。", "二氧化碳過低令血液變鹼。", "正確答案", "過度換氣血液氧氣可接近飽和。"] },
+  { topicNo: 34, q: "一氧化碳中毒的原因是甚麼？", options: ["一氧化碳與血紅蛋白的親和力遠高於氧，阻礙氧運輸", "一氧化碳直接破壞肺部", "一氧化碳令血紅蛋白過多", "一氧化碳增加血液氧氣"], correct: 0, reasons: ["正確答案", "一氧化碳不直接破壞肺部。", "一氧化碳不增加血紅蛋白。", "一氧化碳減少氧運輸。"] },
+  { topicNo: 34, q: "二氧化碳在紅血球內與水反應生成碳酸，此反應由甚麼催化？", options: ["澱粉酶", "蛋白酶", "脂肪酶", "碳酸酐酶"], correct: 3, reasons: ["澱粉酶分解澱粉。", "蛋白酶分解蛋白質。", "脂肪酶分解脂質。", "正確答案"] },
+  { topicNo: 34, q: "碳酸氫根離子在紅血球內形成後會怎樣？", options: ["留在紅血球內", "大部分擴散到血漿，氯離子移入紅血球以維持電中性", "變成氧氣", "與血紅蛋白永久結合"], correct: 1, reasons: ["大部分會離開紅血球。", "正確答案", "碳酸氫根不變氧氣。", "碳酸氫根不與血紅蛋白結合。"] },
+  { topicNo: 34, q: "在高海拔地區，人體會如何適應？", options: ["減少紅血球數目", "增加紅血球數目以提高攜氧能力", "減少呼吸", "降低血紅蛋白濃度"], correct: 1, reasons: ["高海拔下應增加紅血球。", "正確答案", "高海拔下呼吸增加。", "應增加血紅蛋白濃度。"] },
+  { topicNo: 34, q: "血液酸鹼度下降（變酸）時，呼吸會有何變化？", options: ["減慢", "不變", "加快以排出更多二氧化碳", "停止"], correct: 2, reasons: ["變酸時呼吸加快。", "呼吸會調節。", "正確答案", "呼吸不會停止。"] },
+  { topicNo: 34, q: "血紅蛋白對氧的親和力在甚麼條件下下降？", options: ["高溫、高二氧化碳濃度（如活躍組織）", "低溫、低二氧化碳", "高氧分壓", "鹼性環境"], correct: 0, reasons: ["正確答案", "此條件下親和力較高。", "高氧分壓時親和力高。", "鹼性環境親和力高。"] },
+  { topicNo: 34, q: "血液中少量二氧化碳直接與血紅蛋白結合形成甚麼？", options: ["氧合血紅蛋白", "碳氧血紅蛋白", "去氧血紅蛋白", "氨基甲酸血紅蛋白"], correct: 3, reasons: ["氧合血紅蛋白與氧結合。", "碳氧血紅蛋白與一氧化碳結合。", "去氧血紅蛋白是未結合氧的形態。", "正確答案"] },
+  { topicNo: 34, q: "肺部的氧氣進入血液主要靠甚麼？", options: ["擴散作用，由高氧分壓處到低氧分壓處", "主動運輸", "滲透作用", "吞噬作用"], correct: 0, reasons: ["正確答案", "氣體交換靠擴散，不需能量。", "滲透與水份有關。", "吞噬與固體顆粒有關。"] },
+  { topicNo: 34, q: "呼吸的深度和速率主要由血液中甚麼調節？", options: ["氧氣濃度", "葡萄糖濃度", "尿素濃度", "二氧化碳濃度"], correct: 3, reasons: ["主要調節因素是二氧化碳，非氧。", "葡萄糖不調節呼吸。", "尿素不調節呼吸。", "正確答案"] },
+  { topicNo: 34, q: "氧合血紅蛋白在肺部形成的條件是甚麼？", options: ["低氧分壓", "高氧分壓", "高二氧化碳", "高溫"], correct: 1, reasons: ["低氧分壓下血紅蛋白釋氧。", "正確答案", "高二氧化碳促進釋氧。", "高溫促進釋氧。"] },
+  { topicNo: 34, q: "組織細胞進行呼吸作用後，組織液會有何變化？", options: ["氧分壓升高", "二氧化碳減少", "氧分壓降低、二氧化碳升高", "成分不變"], correct: 2, reasons: ["組織消耗氧，氧分壓降低。", "組織產生二氧化碳。", "正確答案", "組織液成分會改變。"] },
+  { topicNo: 35, q: "人類月經週期平均約為多少天？", options: ["7 天", "28 天", "90 天", "365 天"], correct: 1, reasons: ["7 天過短。", "正確答案", "90 天過長。", "365 天過長。"] },
+  { topicNo: 35, q: "卵泡刺激素（FSH）由哪個腺體分泌？", options: ["腦下垂體前葉", "卵巢", "子宮", "甲狀腺"], correct: 0, reasons: ["正確答案", "卵巢分泌雌激素和孕酮。", "子宮不分泌 FSH。", "甲狀腺分泌甲狀腺素。"] },
+  { topicNo: 35, q: "排卵由哪種激素急升引發？", options: ["孕酮", "雌激素", "FSH", "黃體生成素（LH）"], correct: 3, reasons: ["孕酮由黃體分泌，在排卵後上升。", "雌激素在排卵前達高峰，但排卵由 LH 引發。", "FSH 促進卵泡發育，非直接引發排卵。", "正確答案"] },
+  { topicNo: 35, q: "排卵後，卵泡轉變成甚麼？", options: ["子宮內膜", "卵子", "黃體", "胎盤"], correct: 2, reasons: ["卵泡不變成子宮內膜。", "卵子早已在卵泡內。", "正確答案", "胎盤在懷孕後形成。"] },
+  { topicNo: 35, q: "黃體分泌的主要激素是甚麼？", options: ["孕酮", "FSH", "LH", "腎上腺素"], correct: 0, reasons: ["正確答案", "FSH 由腦下垂體分泌。", "LH 由腦下垂體分泌。", "腎上腺素由腎上腺髓質分泌。"] },
+  { topicNo: 35, q: "雌激素在月經週期前半段的作用是甚麼？", options: ["抑制子宮內膜增厚", "引發排卵", "促使子宮內膜增厚修復", "抑制卵泡發育"], correct: 2, reasons: ["雌激素促進內膜增厚。", "引發排卵的是 LH。", "正確答案", "雌激素促進卵泡發育。"] },
+  { topicNo: 35, q: "孕酮在週期後半段的作用是甚麼？", options: ["促使排卵", "維持子宮內膜增厚，為懷孕作準備", "令內膜脫落", "抑制黃體"], correct: 1, reasons: ["排卵由 LH 引發。", "正確答案", "孕酮維持而非令內膜脫落。", "孕酮由黃體分泌，不抑制黃體。"] },
+  { topicNo: 35, q: "若沒有受精，黃體會有何變化？", options: ["永久存在", "繼續增大", "分泌更多孕酮", "退化，孕酮下降，內膜脫落形成月經"], correct: 3, reasons: ["黃體會退化。", "黃體不會增大。", "孕酮會下降。", "正確答案"] },
+  { topicNo: 35, q: "懷孕期間維持黃體的重要激素是甚麼？", options: ["FSH", "LH", "雌激素", "人類絨毛膜促性腺激素（hCG）"], correct: 3, reasons: ["FSH 不維持黃體。", "LH 在懷孕期受抑制。", "雌激素不維持黃體。", "正確答案"] },
+  { topicNo: 35, q: "月經週期中，雌激素在排卵前出現高峰，其作用包括甚麼？", options: ["抑制 LH 分泌", "正反饋促使 LH 急升，引發排卵", "令子宮內膜脫落", "抑制卵泡發育"], correct: 1, reasons: ["雌激素高峰促進 LH 分泌。", "正確答案", "雌激素不令內膜脫落。", "雌激素促進卵泡發育。"] },
+  { topicNo: 35, q: "口服避孕藥通常含甚麼激素以抑制排卵？", options: ["雌激素和孕酮", "胰島素", "甲狀腺素", "腎上腺素"], correct: 0, reasons: ["正確答案", "胰島素調節血糖。", "甲狀腺素調節代謝。", "腎上腺素應付壓力。"] },
+  { topicNo: 35, q: "月經週期第一天是指甚麼？", options: ["排卵當天", "黃體形成當天", "月經來潮的第一天", "受精當天"], correct: 2, reasons: ["排卵在週期中段。", "黃體形成於排卵後。", "正確答案", "受精不固定於第一天。"] },
+  { topicNo: 35, q: "FSH 的作用是甚麼？", options: ["引發排卵", "維持黃體", "刺激卵巢內卵泡發育成熟", "令子宮內膜脫落"], correct: 2, reasons: ["引發排卵的是 LH。", "維持黃體的是 hCG（懷孕時）或 LH。", "正確答案", "內膜脫落因孕酮下降。"] },
+  { topicNo: 35, q: "更年期（絕經）的生理變化是甚麼？", options: ["卵巢功能增強", "雌激素增加", "月經變得更頻密", "卵巢功能衰退，雌激素下降，月經停止"], correct: 3, reasons: ["更年期卵巢功能衰退。", "雌激素下降。", "月經最終停止。", "正確答案"] },
+  { topicNo: 35, q: "受精卵若成功着床，子宮內膜不會脫落，原因是甚麼？", options: ["孕酮停止分泌", "胚胎分泌 hCG 維持黃體，持續分泌孕酮", "雌激素完全消失", "內膜已完全退化"], correct: 1, reasons: ["孕酮需持續分泌。", "正確答案", "雌激素仍會分泌。", "內膜需維持增厚。"] },
+  { topicNo: 35, q: "月經週期中「負反饋」的例子是甚麼？", options: ["高濃度孕酮抑制 FSH 分泌", "雌激素高峰促進 LH 分泌", "LH 急升引發排卵", "子宮內膜增厚"], correct: 0, reasons: ["正確答案", "雌激素高峰促進 LH 是正反饋。", "LH 引發排卵是激素效應，非負反饋。", "內膜增厚是效應，非反饋。"] },
+  { topicNo: 35, q: "排卵通常發生在月經週期的甚麼時候？", options: ["第 1 天", "約第 14 天", "第 28 天", "第 21 天之後"], correct: 1, reasons: ["第 1 天是月經開始。", "正確答案", "第 28 天是週期末。", "排卵多在週期中段。"] },
+  { topicNo: 35, q: "腦下垂體在生殖週期中的角色是甚麼？", options: ["分泌 FSH 和 LH 調控卵巢", "直接產生卵子", "分泌孕酮", "是受精場所"], correct: 0, reasons: ["正確答案", "卵子由卵巢產生。", "孕酮由黃體分泌。", "受精在輸卵管進行。"] },
+  { topicNo: 35, q: "子宮內膜在月經週期中增厚的目的是甚麼？", options: ["產生卵子", "分泌激素", "為胚胎着床作準備", "儲存尿液"], correct: 2, reasons: ["卵子由卵巢產生。", "內膜不分泌主要激素。", "正確答案", "子宮不儲存尿液。"] },
+  { topicNo: 35, q: "孕酮與雌激素在子宮內膜的協同作用是甚麼？", options: ["兩者互相拮抗", "兩者都令內膜脫落", "兩者沒有作用", "共同促使並維持子宮內膜增厚"], correct: 3, reasons: ["兩者協同而非拮抗。", "兩者不會令內膜脫落。", "兩者對內膜有重要作用。", "正確答案"] },
+  { topicNo: 36, q: "酸雨的主要成因是甚麼？", options: ["二氧化碳溶於雨水", "氧氣溶於雨水", "二氧化硫和氮氧化物溶於雨水", "水蒸氣凝結"], correct: 2, reasons: ["二氧化碳形成弱碳酸，非酸雨主因。", "氧氣不造成酸雨。", "正確答案", "水蒸氣凝結是正常降雨。"] },
+  { topicNo: 36, q: "溫室效應增強的主要原因是甚麼？", options: ["大氣中氧氣增加", "大氣中氮氣增加", "臭氧層增厚", "燃燒化石燃料令二氧化碳等溫室氣體增加"], correct: 3, reasons: ["氧氣非主要溫室氣體。", "氮氣非主要溫室氣體。", "臭氧層增厚不引起全球暖化。", "正確答案"] },
+  { topicNo: 36, q: "全球暖化可能導致的後果是甚麼？", options: ["海平面上升、氣候異常", "海平面下降", "全球溫度下降", "沒有影響"], correct: 0, reasons: ["正確答案", "冰川融化令海平面上升。", "全球暖化令溫度上升。", "全球暖化影響深遠。"] },
+  { topicNo: 36, q: "臭氧層的作用是甚麼？", options: ["產生氧氣", "吸收大部分紫外線，保護生物", "吸收紅外線", "促進酸雨形成"], correct: 1, reasons: ["臭氧層不產生氧氣。", "正確答案", "臭氧層吸收紫外線，非紅外線。", "臭氧層與酸雨無關。"] },
+  { topicNo: 36, q: "水體富營養化的主要原因是甚麼？", options: ["重金屬污染", "油污", "噪音", "過量氮、磷等營養物排入水體"], correct: 3, reasons: ["重金屬造成毒性污染，非富營養化。", "油污不引起富營養化。", "噪音不影響水體營養。", "正確答案"] },
+  { topicNo: 36, q: "富營養化導致魚類死亡的直接原因是甚麼？", options: ["藻類大量繁殖後分解耗盡水中氧氣", "水中氧氣過多", "水溫過低", "魚類食物過多"], correct: 0, reasons: ["正確答案", "富營養化最終導致缺氧。", "富營養化與水溫低無關。", "食物多非致死主因。"] },
+  { topicNo: 36, q: "「生物放大作用」是指甚麼？", options: ["生物體型變大", "有毒物質沿食物鏈傳遞並在較高營養級累積至更高濃度", "生物數量增加", "生物繁殖加快"], correct: 1, reasons: ["生物放大指污染物濃度累積。", "正確答案", "生物放大與數量無關。", "與繁殖無關。"] },
+  { topicNo: 36, q: "生物放大作用中，哪個營養級的生物累積最多有毒物質？", options: ["生產者", "初級消費者", "最高營養級的捕食者", "分解者"], correct: 2, reasons: ["生產者累積最少。", "初級消費者累積較少。", "正確答案", "分解者不屬食物鏈頂端累積。"] },
+  { topicNo: 36, q: "濫伐森林的後果不包括以下哪項？", options: ["增加大氣中的氧氣含量", "增加土壤侵蝕", "減少二氧化碳的吸收", "破壞生物多樣性"], correct: 0, reasons: ["正確答案", "濫伐會加劇土壤侵蝕。", "樹木減少會減少二氧化碳吸收。", "濫伐會破壞生境和生物多樣性。"] },
+  { topicNo: 36, q: "過度捕魚的影響是甚麼？", options: ["增加魚類數量", "破壞海洋生態平衡，令漁業資源枯竭", "改善海洋生態", "沒有影響"], correct: 1, reasons: ["過度捕魚減少魚類數量。", "正確答案", "會破壞而非改善。", "影響重大。"] },
+  { topicNo: 36, q: "不可再生能源的例子是甚麼？", options: ["太陽能", "風能", "煤和石油", "水能"], correct: 2, reasons: ["太陽能是可再生能源。", "風能是可再生能源。", "正確答案", "水能是可再生能源。"] },
+  { topicNo: 36, q: "可持續發展的原則是甚麼？", options: ["只顧當代需求", "耗盡所有資源", "停止一切發展", "滿足當代需求而不損害後代滿足其需求的能力"], correct: 3, reasons: ["可持續發展兼顧後代。", "不應耗盡資源。", "可持續發展非停止發展。", "正確答案"] },
+  { topicNo: 36, q: "減少碳足跡的方法是甚麼？", options: ["增加私家車使用", "使用公共交通工具和節能", "增加用電量", "燃燒更多化石燃料"], correct: 1, reasons: ["增加私家車增加碳排放。", "正確答案", "增加用電增加碳排放。", "燃燒化石燃料增加碳排放。"] },
+  { topicNo: 36, q: "城市固體廢物的「3R」原則不包括以下哪項？", options: ["減量（Reduce）", "重用（Reuse）", "焚化（Incineration）", "回收（Recycle）"], correct: 2, reasons: ["減量是 3R 之一。", "重用是 3R 之一。", "正確答案", "回收是 3R 之一。"] },
+  { topicNo: 36, q: "空氣污染物「懸浮粒子」的來源是甚麼？", options: ["植物光合作用", "海洋蒸發", "風力發電", "燃燒化石燃料和工業排放"], correct: 3, reasons: ["光合作用不產生懸浮粒子。", "蒸發產生水蒸氣。", "風力發電不排放懸浮粒子。", "正確答案"] },
+  { topicNo: 36, q: "DDT 等持久性有機污染物在食物鏈中的特點是甚麼？", options: ["難分解並會沿食物鏈累積放大", "容易被生物分解", "不溶於脂肪", "對生物無害"], correct: 0, reasons: ["正確答案", "DDT 難分解。", "DDT 溶於脂肪。", "DDT 對生物有害。"] },
+  { topicNo: 36, q: "熱帶雨林被稱為「地球之肺」，原因是甚麼？", options: ["它產生大量二氧化碳", "它儲存大量礦物", "它進行大量光合作用，吸收二氧化碳並釋放氧氣", "它沒有植物"], correct: 2, reasons: ["雨林吸收二氧化碳，非產生。", "礦物非其稱號原因。", "正確答案", "雨林植物茂密。"] },
+  { topicNo: 36, q: "溫室氣體的例子不包括以下哪項？", options: ["氧氣", "二氧化碳", "甲烷", "水蒸氣"], correct: 0, reasons: ["正確答案", "二氧化碳是溫室氣體。", "甲烷是溫室氣體。", "水蒸氣是溫室氣體。"] },
+  { topicNo: 36, q: "土地污染（如重金屬污染）的影響是甚麼？", options: ["改善作物生長", "增加土壤肥力", "沒有影響", "有毒物質進入食物鏈，危害生物健康"], correct: 3, reasons: ["重金屬抑制植物生長。", "重金屬降低土壤品質。", "土地污染影響重大。", "正確答案"] },
+  { topicNo: 36, q: "全球暖化與燃燒化石燃料的關係是甚麼？", options: ["化石燃料燃燒吸收二氧化碳", "燃燒化石燃料釋放二氧化碳，加劇溫室效應", "兩者無關", "化石燃料燃燒釋放氧氣"], correct: 1, reasons: ["燃燒釋放而非吸收二氧化碳。", "正確答案", "兩者密切相關。", "燃燒消耗氧氣。"] },
+  { topicNo: 37, q: "污水處理中，「初級處理」主要移除甚麼？", options: ["溶解的化學物質", "細菌", "氮和磷", "大型固體和懸浮物"], correct: 3, reasons: ["溶解物質需次級或三級處理。", "細菌在次級處理中作用。", "氮磷在三級處理移除。", "正確答案"] },
+  { topicNo: 37, q: "污水處理的「次級處理」主要靠甚麼？", options: ["微生物分解有機物", "過濾大型垃圾", "加入氯氣", "紫外線"], correct: 0, reasons: ["正確答案", "過濾是初級處理。", "加氯是消毒步驟。", "紫外線是消毒步驟。"] },
+  { topicNo: 37, q: "汽車安裝催化轉換器的作用是甚麼？", options: ["增加燃料消耗", "產生更多污染物", "把有害氣體轉化為較無害的氣體", "增加噪音"], correct: 2, reasons: ["催化轉換器不增加燃料消耗。", "其作用是減少污染物。", "正確答案", "與噪音無關。"] },
+  { topicNo: 37, q: "催化轉換器把一氧化碳轉化為甚麼？", options: ["二氧化硫", "二氧化碳", "氮氣", "甲烷"], correct: 1, reasons: ["一氧化碳氧化成二氧化碳。", "正確答案", "氮氧化物被還原為氮氣。", "不產生甲烷。"] },
+  { topicNo: 37, q: "從煙道氣移除二氧化硫的方法是甚麼？", options: ["煙道氣脫硫（如用石灰吸收）", "增加燃燒溫度", "使用更純的煤", "不處理直接排放"], correct: 0, reasons: ["正確答案", "提高溫度不除硫。", "純煤仍可能含硫。", "直接排放造成酸雨。"] },
+  { topicNo: 37, q: "「就地保育」的例子是甚麼？", options: ["動物園飼養大熊貓", "設立自然保護區", "種子庫儲存種子", "植物園栽種稀有植物"], correct: 1, reasons: ["動物園屬遷地保育。", "正確答案", "種子庫屬遷地保育。", "植物園屬遷地保育。"] },
+  { topicNo: 37, q: "「遷地保育」的例子是甚麼？", options: ["設立郊野公園", "設立海岸公園", "保護紅樹林", "在動物園或種子庫保存物種"], correct: 3, reasons: ["郊野公園屬就地保育。", "海岸公園屬就地保育。", "保護紅樹林屬就地保育。", "正確答案"] },
+  { topicNo: 37, q: "CITES（華盛頓公約）的目的是甚麼？", options: ["促進國際貿易自由", "鼓勵狩獵瀕危物種", "管制瀕危物種的國際貿易", "增加象牙貿易"], correct: 2, reasons: ["CITES 限制而非促進貿易。", "CITES 反對狩獵瀕危物種。", "正確答案", "CITES 禁止象牙貿易。"] },
+  { topicNo: 37, q: "種子庫保存種子的優點是甚麼？", options: ["只能保存大型動物", "能在低溫下長期保存大量植物遺傳資源", "需要大量空間", "種子只能保存數天"], correct: 1, reasons: ["種子庫保存植物種子，非動物。", "正確答案", "種子庫佔地較少。", "種子可長期保存。"] },
+  { topicNo: 37, q: "環境影響評估（EIA）的作用是甚麼？", options: ["加快工程進行", "免除環保法規", "在工程前評估其對環境的潛在影響", "增加污染"], correct: 2, reasons: ["EIA 不為加快工程。", "EIA 不豁免法規。", "正確答案", "EIA 旨在減少影響。"] },
+  { topicNo: 37, q: "減少空氣污染的措施是甚麼？", options: ["使用潔淨能源和安裝污染控制裝置", "增加燃煤", "焚燒更多廢物", "增加私家車"], correct: 0, reasons: ["正確答案", "增加燃煤加重污染。", "焚燒加重污染。", "私家車增加排放。"] },
+  { topicNo: 37, q: "污水處理後，排放前通常要進行甚麼？", options: ["直接排入河流", "加入更多有機物", "加入重金屬", "消毒以殺死病原體"], correct: 3, reasons: ["未經消毒不宜排放。", "加有機物會加重污染。", "重金屬是有毒污染物。", "正確答案"] },
+  { topicNo: 37, q: "保育生物多樣性的措施不包括以下哪項？", options: ["立法保護瀕危物種", "設立保護區", "大規模捕獵瀕危物種", "公眾教育"], correct: 2, reasons: ["立法是保育措施。", "保護區是保育措施。", "正確答案", "公眾教育是保育措施。"] },
+  { topicNo: 37, q: "設立海岸公園的好處是甚麼？", options: ["增加捕魚量", "方便填海", "保護海洋生境和生物多樣性", "促進船隻航行"], correct: 3, reasons: ["海岸公園限制捕魚。", "海岸公園反對填海。", "正確答案", "海岸公園限制航行活動。"] },
+  { topicNo: 37, q: "回收再造的好處是甚麼？", options: ["增加堆填區壓力", "減少資源消耗和廢物量", "增加能源消耗", "產生更多廢物"], correct: 1, reasons: ["回收減少堆填壓力。", "正確答案", "回收節省能源。", "回收減少廢物。"] },
+  { topicNo: 37, q: "堆填區的環境問題是甚麼？", options: ["產生滲濾液和甲烷，污染土地與空氣", "完全沒有污染", "增加生物多樣性", "淨化地下水"], correct: 0, reasons: ["正確答案", "堆填區有污染問題。", "堆填區破壞生境。", "滲濾液污染地下水。"] },
+  { topicNo: 37, q: "控制水污染的措施是甚麼？", options: ["把工業廢水直接排入河流", "增加農藥使用", "把家居污水直接排海", "污水處理和管制工業廢水排放"], correct: 3, reasons: ["直接排放會污染。", "農藥會污染水體。", "直接排海會污染。", "正確答案"] },
+  { topicNo: 37, q: "為甚麼要保護瀕危物種？", options: ["牠們沒有價值", "維持生物多樣性和生態平衡", "牠們會危害人類", "保護牠們沒有好處"], correct: 1, reasons: ["瀕危物種具生態價值。", "正確答案", "瀕危物種一般不危害人類。", "保護瀕危物種有重要價值。"] },
+  { topicNo: 37, q: "濕地在污染控制中的作用是甚麼？", options: ["增加污染", "沒有作用", "過濾污染物並提供生物棲息地", "產生重金屬"], correct: 2, reasons: ["濕地可淨化水質。", "濕地有淨化功能。", "正確答案", "濕地不產生重金屬。"] },
+  { topicNo: 37, q: "個人可為保育作出的貢獻是甚麼？", options: ["減少浪費、支持回收和保護自然生境", "浪費資源", "購買瀕危物種製品", "破壞郊野公園"], correct: 0, reasons: ["正確答案", "浪費資源不利保育。", "購買瀕危製品助長非法貿易。", "破壞生境不利保育。"] },
+];
+
+</script>
+  <script>
+const FRONTIER_TECH = [
+  {
+    title: "基因工程與基因編輯（CRISPR-Cas9）",
+    subtitle: "精準改寫生命藍圖的分子剪刀",
+    relatedTopics: [
+      { no: 26, name: "基礎遺傳學" },
+      { no: 27, name: "分子遺傳學" },
+      { no: 28, name: "生物工程" }
+    ],
+    coreConcepts: [
+      "基因是染色體上的一段 DNA，其鹼基序列決定多肽（蛋白質）的氨基酸序列，進而決定生物特徵。",
+      "重組 DNA 技術利用限制酶（分子剪刀）與 DNA 連接酶（分子膠水）把目標基因插入質粒載體，再轉移入宿主細胞。",
+      "CRISPR-Cas9 系統由引導 RNA 辨認目標 DNA 序列，再由 Cas9 核酸酶在特定位置切斷 DNA，實現精準基因編輯。",
+      "應用包括基因治療、改良農作物、研究基因功能與建立疾病模型。",
+      "涉及倫理議題，例如人類胚胎基因編輯的安全性與公平性。"
+    ],
+    concept: "CRISPR-Cas9 是近年發展的基因編輯工具，利用引導 RNA 引領 Cas9 蛋白在基因組特定位置造成雙鏈斷裂，細胞修復時可刪除、取代或插入 DNA 序列。相比早期基因工程，它更精準、快速且成本較低，把重組 DNA 技術推進至「直接在生物基因組內編輯」的新階段。",
+    sourceUrl: "https://www.genome.gov/genetics-glossary/CRISPR",
+    mcqs: [
+      { q: "在 CRISPR-Cas9 系統中，引導 RNA（gRNA）的主要作用是甚麼？", options: ["辨認並結合目標 DNA 序列", "連接斷裂的 DNA 片段", "複製目標基因", "合成新蛋白質"], correct: 0, reasons: ["正確答案", "連接 DNA 片段是 DNA 連接酶的功能，不是 gRNA。", "複製 DNA 是 DNA 聚合酶的功能。", "合成蛋白質是核糖體的功能。"] },
+      { q: "CRISPR-Cas9 中，Cas9 蛋白的主要功能是甚麼？", options: ["在細胞核外分解 mRNA", "在目標位置切斷 DNA 雙鏈", "把目標基因插入質粒", "刺激 B 細胞產生抗體"], correct: 1, reasons: ["Cas9 的作用是切斷 DNA，而非分解 mRNA。", "正確答案", "把基因插入質粒需限制酶與 DNA 連接酶共同完成，不是 Cas9。", "Cas9 與免疫系統產生抗體無關。"] },
+      { q: "傳統重組 DNA 技術中，被形容為「分子剪刀」、用以切開 DNA 的酶是甚麼？", options: ["DNA 連接酶", "DNA 聚合酶", "限制酶", "解旋酶"], correct: 2, reasons: ["DNA 連接酶是「分子膠水」，負責連接片段。", "DNA 聚合酶負責合成新鏈，不切開 DNA。", "正確答案", "解旋酶在複製時拆開雙鏈，但不作特定位點切割。"] },
+      { q: "以下哪項正確描述 CRISPR-Cas9 相比早期基因工程的優點？", options: ["必定不會出現脫靶效應", "無需任何酶參與", "只能應用於植物細胞", "更精準、快速且成本較低"], correct: 3, reasons: ["CRISPR 仍可能出現脫靶效應，即切錯位置。", "Cas9 本身是核酸酶，過程需酶參與。", "CRISPR 可應用於動物、植物及微生物細胞。", "正確答案"] },
+      { q: "當 Cas9 造成 DNA 雙鏈斷裂後，細胞如何令基因編輯得以完成？", options: ["利用自身修復機制刪除、取代或插入 DNA 序列", "立即分解整條染色體", "把斷裂的 DNA 分泌到細胞外", "停止所有蛋白質合成"], correct: 0, reasons: ["正確答案", "細胞不會分解整條染色體，只會修復斷裂位點。", "斷裂的 DNA 不會被分泌出細胞外。", "細胞不會因基因編輯而停止蛋白質合成。"] }
+    ]
+  },
+  {
+    title: "幹細胞技術",
+    subtitle: "未分化細胞的再生與治療潛力",
+    relatedTopics: [
+      { no: 3, name: "細胞組織" },
+      { no: 15, name: "生長與發育" },
+      { no: 24, name: "非傳染病與疾病的預防" }
+    ],
+    coreConcepts: [
+      "幹細胞是未分化的細胞，能自我更新，並在特定條件下分化成多種特化細胞。",
+      "胚胎幹細胞具較廣的分化潛力，成體幹細胞的分化潛力則較有限。",
+      "細胞分化是指細胞特化成不同種類，以發揮不同功能（第 15 章）。",
+      "應用包括再生醫學（修補受損組織）、藥物測試與疾病研究。",
+      "涉及胚胎幹細胞來源的道德倫理爭議。"
+    ],
+    concept: "幹細胞技術利用幹細胞的自我更新與分化能力，在體外培養並引導其分化成目標細胞（如神經細胞、心肌細胞），再移植回病人體內以修補受損組織。誘導性多能幹細胞（iPSC）技術更可把成體細胞「重編程」為具胚胎幹細胞潛力的細胞，避免使用胚胎。",
+    sourceUrl: "https://stemcells.nih.gov/",
+    mcqs: [
+      { q: "以下哪項是幹細胞最重要的兩個特性？", options: ["已特化且不能分裂", "能自我更新並可分化成特化細胞", "只能進行減數分裂", "只存在於植物分生組織"], correct: 1, reasons: ["幹細胞是未分化的細胞，且能分裂更新。", "正確答案", "幹細胞以有絲分裂增殖，而非減數分裂。", "幹細胞在動物（如骨髓）中亦存在。"] },
+      { q: "比較胚胎幹細胞與成體幹細胞，以下哪項是正確的？", options: ["成體幹細胞分化潛力比胚胎幹細胞更廣", "兩者均完全不可分化", "胚胎幹細胞的分化潛力一般較成體幹細胞廣", "成體幹細胞只存在於胚胎中"], correct: 2, reasons: ["胚胎幹細胞分化潛力較廣，成體幹細胞較有限。", "兩者都能分化，只是潛力不同。", "正確答案", "成體幹細胞存在於成體組織，如骨髓。"] },
+      { q: "誘導性多能幹細胞（iPSC）技術的主要意義是甚麼？", options: ["直接製造完整胚胎", "令已特化細胞永久失去分裂能力", "只能從胚胎取得幹細胞", "把成體細胞重編程為具胚胎幹細胞潛力的細胞"], correct: 3, reasons: ["iPSC 技術不是用於製造完整胚胎。", "重編程是恢復細胞的多能性，而非令其失去分裂能力。", "iPSC 正正可避免使用胚胎，由成體細胞製備。", "正確答案"] },
+      { q: "以下哪項是幹細胞技術在再生醫學中的應用？", options: ["修補受損組織，如心肌或神經組織", "增加病原體的抗藥性", "提高農作物的光合作用速率", "分解塑膠廢物"], correct: 0, reasons: ["正確答案", "幹細胞技術用於治療而非增加抗藥性。", "提高光合作用屬基因工程或育種範疇，不是幹細胞應用。", "分解塑膠廢物與幹細胞技術無關。"] },
+      { q: "以下哪項屬於幹細胞研究的倫理爭議？", options: ["幹細胞能否進行光合作用", "使用人類胚胎幹細胞涉及胚胎的道德地位問題", "幹細胞是否含有細胞核", "幹細胞能否儲存遺傳信息"], correct: 1, reasons: ["光合作用不是幹細胞倫理爭議的內容。", "正確答案", "幹細胞含細胞核，此屬事實而非爭議。", "儲存遺傳信息是 DNA 的功能，不是爭議焦點。"] }
+    ]
+  },
+  {
+    title: "疫苗技術（mRNA 疫苗）",
+    subtitle: "以遺傳指令誘發免疫記憶的新一代疫苗",
+    relatedTopics: [
+      { no: 23, name: "個人健康與傳染病" },
+      { no: 25, name: "身體的防禦機制" },
+      { no: 27, name: "分子遺傳學" }
+    ],
+    coreConcepts: [
+      "疫苗接種把抗原引入身體，誘發初次免疫反應並產生記憶細胞，使再次接觸病原體時能迅速產生再次反應（第 25 章）。",
+      "主動免疫由自身免疫系統產生，效果持久；mRNA 疫苗屬人工主動免疫。",
+      "轉錄與轉譯：mRNA 攜帶遺傳密碼，在細胞質核糖體合成蛋白質（第 27 章）。",
+      "mRNA 疫苗利用脂質納米粒子把編碼病原體抗原的 mRNA 送入細胞，由細胞自行合成抗原蛋白，誘發免疫反應。",
+      "優點包括設計快、生產迅速、不整合入基因組。"
+    ],
+    concept: "mRNA 疫苗不含完整病原體，而是把編碼病原體表面抗原（如刺突蛋白）的信使 RNA 送入人體細胞，由核糖體轉譯出抗原蛋白，免疫系統識別後產生抗體與記憶細胞。由於只需更改 mRNA 序列即可應對新病毒株，研發與生產遠較傳統疫苗快速。",
+    sourceUrl: "https://www.cdc.gov/vaccines/covid-19/hcp/mrna-vaccine.html",
+    mcqs: [
+      { q: "mRNA 疫苗進入人體細胞後，編碼的抗原蛋白在哪種細胞器合成？", options: ["線粒體", "溶酶體", "核糖體", "高爾基體"], correct: 2, reasons: ["線粒體負責有氧呼吸，不是蛋白質合成場所。", "溶酶體含消化酶，負責分解物質。", "正確答案", "高爾基體負責修飾和包裝蛋白質，而非合成。"] },
+      { q: "以下哪項是 mRNA 疫苗的優點？", options: ["必定整合入人體基因組", "含有完整活性病原體", "需長時間培養病原體才能生產", "設計快、生產迅速"], correct: 3, reasons: ["mRNA 疫苗不整合入基因組。", "mRNA 疫苗不含完整病原體。", "mRNA 疫苗以序列設計生產，不需長時間培養病原體。", "正確答案"] },
+      { q: "mRNA 疫苗誘發的免疫屬於以下哪一類型？", options: ["人工主動免疫", "天然被動免疫", "人工被動免疫", "天然主動免疫"], correct: 0, reasons: ["正確答案", "天然被動免疫指從母體獲得抗體，並非接種疫苗。", "人工被動免疫是直接注射抗體，而非誘發自身產生。", "天然主動免疫是感染病原體後獲得，非接種疫苗。"] },
+      { q: "mRNA 疫苗中，脂質納米粒子的作用是甚麼？", options: ["作為抗原直接刺激 T 細胞", "保護 mRNA 並協助其進入細胞", "殺死病原體", "提供細胞能量"], correct: 1, reasons: ["脂質納米粒子本身不是抗原。", "正確答案", "mRNA 疫苗不含完整病原體，納米粒子也不負責殺菌。", "提供能量是葡萄糖等呼吸底物的功能。"] },
+      { q: "接種 mRNA 疫苗後，身體能迅速應對真正病原體入侵，主要因為產生了甚麼？", options: ["紅血球", "血小板", "記憶細胞", "角質細胞"], correct: 2, reasons: ["紅血球負責運氧，與免疫記憶無關。", "血小板負責凝血。", "正確答案", "角質細胞是皮膚表面細胞，不參與免疫記憶。"] }
+    ]
+  },
+  {
+    title: "單株抗體與免疫治療",
+    subtitle: "專一性抗體對抗疾病與癌症",
+    relatedTopics: [
+      { no: 23, name: "個人健康與傳染病" },
+      { no: 25, name: "身體的防禦機制" },
+      { no: 28, name: "生物工程" }
+    ],
+    coreConcepts: [
+      "B 細胞被抗原活化後分化成漿細胞，分泌具高度專一性的抗體（第 25 章）。",
+      "抗體能凝集病原體、促進吞噬、中和毒素，或經溶菌作用破壞病原體。",
+      "單株抗體由單一 B 細胞（或雜交瘤細胞）繁衍而成，只針對單一抗原決定位，專一性高。",
+      "應用包括癌症標靶治療、免疫治療（如免疫檢查點抑制劑、CAR-T 細胞治療）、診斷試劑與自身免疫疾病治療。",
+      "免疫治療利用自身免疫系統對抗疾病（第 25 章 T 細胞治療）。"
+    ],
+    concept: "單株抗體技術透過融合骨髓瘤細胞與能產生特定抗體的 B 細胞，形成可無限增殖且持續分泌單一抗體的雜交瘤，大量生產針對特定抗原的抗體。在癌症治療中，單株抗體可標記癌細胞讓免疫系統攻擊，或阻斷癌細胞生長訊息，達致「標靶」效果。",
+    sourceUrl: "https://www.cancer.gov/about-cancer/treatment/types/immunotherapy/monoclonal-antibodies",
+    mcqs: [
+      { q: "分泌抗體的漿細胞是由哪種細胞活化分化而成？", options: ["紅血球", "神經元", "T 細胞", "B 細胞"], correct: 3, reasons: ["紅血球不產生抗體。", "神經元負責傳遞神經脈衝。", "T 細胞主要負責細胞免疫，不分泌大量抗體。", "正確答案"] },
+      { q: "單株抗體最大的特點是甚麼？", options: ["由單一 B 細胞（雜交瘤）繁衍，只針對單一抗原決定位", "由多種 B 細胞產生，能結合多種抗原", "完全不含蛋白質", "能無限自我複製 DNA"], correct: 0, reasons: ["正確答案", "單株抗體來自單一 B 細胞，專一性高。", "抗體本身是蛋白質。", "抗體是蛋白質，不複製 DNA。"] },
+      { q: "生產單株抗體時，骨髓瘤細胞的作用是甚麼？", options: ["提供抗原", "令融合細胞可無限增殖", "分泌胰島素", "辨認癌細胞"], correct: 1, reasons: ["抗原由外部提供，不是骨髓瘤細胞產生。", "正確答案", "分泌胰島素是胰臟 β 細胞的功能。", "辨認癌細胞依靠抗體或免疫細胞，不是骨髓瘤細胞。"] },
+      { q: "在癌症治療中，單株抗體如何達致「標靶」效果？", options: ["直接溶解病人所有細胞", "改變病人全部基因", "標記癌細胞讓免疫系統攻擊，或阻斷癌細胞生長訊息", "為癌細胞提供營養"], correct: 2, reasons: ["單株抗體專一地作用於癌細胞，不會溶解所有細胞。", "單株抗體不會改變病人基因。", "正確答案", "單株抗體抑制癌細胞，而非提供營養。"] },
+      { q: "以下哪項不是單株抗體的應用？", options: ["癌症標靶治療", "診斷試劑", "免疫檢查點抑制劑", "作為限制酶切割 DNA"], correct: 3, reasons: ["癌症標靶治療是單株抗體的常見應用。", "單株抗體可用於診斷試劑。", "免疫檢查點抑制劑屬免疫治療的一種。", "正確答案"] }
+    ]
+  },
+  {
+    title: "生物資訊學與 DNA 指紋分析",
+    subtitle: "從鹼基序列解讀生命與鑑定個體",
+    relatedTopics: [
+      { no: 26, name: "基礎遺傳學" },
+      { no: 27, name: "分子遺傳學" },
+      { no: 28, name: "生物工程" },
+      { no: 30, name: "生命的起源與進化的證據" }
+    ],
+    coreConcepts: [
+      "DNA 指紋分析利用 DNA 高變異區域（非編碼重複序列）在個體間的長度差異來鑑定身份（第 28 章）。",
+      "凝膠電泳按分子大小分離 DNA 片段；較小片段移動較快（第 28 章）。",
+      "生物資訊學結合電腦科學與生物學，儲存、分析與比較大量 DNA 鹼基序列數據（如人類基因組計畫）。",
+      "比較 DNA 鹼基序列或蛋白質氨基酸序列可推斷生物的進化關係（第 30 章）。",
+      "應用包括法證科學、親子鑑證、遺傳病診斷、物種鑑定與進化研究。"
+    ],
+    concept: "DNA 指紋分析把個體 DNA 經限制酶切割後以凝膠電泳分離，形成獨特的條帶式樣以鑑定身份；生物資訊學則以演算法與資料庫處理海量序列數據，把個體基因組與參考基因組比對。兩者結合成為現代法證、親子鑑定與精準醫學的基礎工具。",
+    sourceUrl: "https://www.genome.gov/genetics-glossary/DNA-Fingerprinting",
+    mcqs: [
+      { q: "DNA 指紋分析主要利用 DNA 的哪一類區域來鑑定個體？", options: ["非編碼的高變異重複序列", "所有生物完全相同的編碼區", "粒線體外膜蛋白", "細胞壁纖維素"], correct: 0, reasons: ["正確答案", "編碼區在個體間差異相對小，指紋分析利用高變異非編碼區。", "粒線體外膜蛋白不屬 DNA 指紋分析的標的。", "細胞壁纖維素與 DNA 指紋分析無關。"] },
+      { q: "凝膠電泳中，DNA 片段的分離依據是甚麼？", options: ["片段顏色", "片段所含氮原子數", "片段大小（分子量）", "片段溫度"], correct: 2, reasons: ["電泳不以顏色分離片段。", "分離與氮原子數無直接關係。", "正確答案", "電泳在恒定條件下進行，與片段溫度無關。"] },
+      { q: "凝膠電泳中，較小的 DNA 片段會怎樣？", options: ["留在起點不動", "移動較快、走得較遠", "移動較慢、走得較近", "向正極反方向移動"], correct: 1, reasons: ["較小片段移動較快，不會留在起點。", "正確答案", "移動較慢的是較大片段。", "DNA 片段因帶負電向正極移動，不會反向。"] },
+      { q: "生物資訊學的主要工作是甚麼？", options: ["在野外觀察動物行為", "培養細菌生產抗生素", "利用顯微鏡觀察細胞分裂", "以電腦儲存、分析與比較大量 DNA 鹼基序列"], correct: 3, reasons: ["野外觀察屬生態學範疇。", "培養細菌屬微生物學或生物工程。", "顯微鏡觀察屬細胞學方法。", "正確答案"] },
+      { q: "比較不同生物的 DNA 鹼基序列可用以推斷甚麼？", options: ["它們的進化關係", "它們的體重", "它們的棲息地溫度", "它們的壽命長短"], correct: 0, reasons: ["正確答案", "DNA 序列不能直接顯示體重。", "DNA 序列不能直接顯示棲息地溫度。", "DNA 序列不能直接顯示壽命長短。"] }
+    ]
+  }
+];
+
+</script>
+  <script>
+// app.js
+// 生物溫習程式 — 應用程式邏輯（頁面切換、練習模式、挑戰模式、分析頁、前沿科技渲染）
+
+'use strict';
+
+// ---------- 安全合併題庫（檔案缺失時不報錯） ----------
+const ALL_QUESTIONS = [...(typeof QB1 !== 'undefined' ? QB1 : []), ...(typeof QB2 !== 'undefined' ? QB2 : []), ...(typeof QB3 !== 'undefined' ? QB3 : [])];
+
+const FRONTIER = typeof FRONTIER_TECH !== 'undefined' ? FRONTIER_TECH : [];
+const TOPIC_LIST = typeof TOPICS !== 'undefined' ? TOPICS : [];
+
+// ---------- 狀態變數 ----------
+let practiceQuestions = [];
+let practiceIndex = 0;
+let practiceCorrectCount = 0;
+let practiceTopicNo = null;
+
+let challengeQuestions = [];
+let challengeIndex = 0;
+let challengeAnswers = [];
+let challengeTimerSeconds = 40 * 60;
+let challengeTimerInterval = null;
+
+// ---------- 工具函式 ----------
+function letter(i) {
+  return String.fromCharCode(65 + i);
+}
+
+function pad(n) {
+  return String(n).padStart(2, '0');
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function topicName(no) {
+  const t = TOPIC_LIST.find(function (x) { return x.no === no; });
+  return t ? t.name : ('課題 ' + no);
+}
+
+function getQuestionsByTopic(no) {
+  return ALL_QUESTIONS.filter(function (q) { return q && q.topicNo === no; });
+}
+
+function reasonOf(q, index) {
+  if (!q || !Array.isArray(q.reasons)) return '';
+  return q.reasons[index] || '';
+}
+
+// ---------- 頁面切換 ----------
+const PAGE_IDS = [
+  'homePage',
+  'mcPage',
+  'practiceListPage',
+  'practiceQuizPage',
+  'practiceAnalysisPage',
+  'challengePage',
+  'challengeAnalysisPage',
+  'techPage'
+];
+
+function showPage(pageId) {
+  PAGE_IDS.forEach(function (id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+  });
+  const target = document.getElementById(pageId);
+  if (target) target.classList.remove('hidden');
+  window.scrollTo(0, 0);
+}
+
+function goHome() {
+  stopChallenge();
+  showPage('homePage');
+}
+
+function goToMCPage() {
+  stopChallenge();
+  showPage('mcPage');
+}
+
+function goToPracticeMode() {
+  stopChallenge();
+  renderPracticeTopicList();
+  showPage('practiceListPage');
+}
+
+function goToChallengeMode() {
+  startChallenge();
+}
+
+function goToTechPage() {
+  stopChallenge();
+  renderTechPage();
+  showPage('techPage');
+}
+
+function exitChallenge() {
+  stopChallenge();
+  showPage('mcPage');
+}
+
+// ---------- 練習模式 ----------
+function renderPracticeTopicList() {
+  const listEl = document.getElementById('practiceTopicList');
+  const noticeEl = document.getElementById('practiceListNotice');
+  if (!listEl) return;
+  listEl.innerHTML = '';
+  if (noticeEl) noticeEl.textContent = '';
+
+  if (!TOPIC_LIST.length) {
+    const p = document.createElement('p');
+    p.className = 'notice';
+    p.textContent = '課題清單尚未載入。';
+    listEl.appendChild(p);
+    return;
+  }
+
+  TOPIC_LIST.forEach(function (t) {
+    const row = document.createElement('div');
+    row.className = 'topic-row';
+
+    const no = document.createElement('span');
+    no.className = 'topic-no';
+    no.textContent = pad(t.no);
+
+    const name = document.createElement('span');
+    name.className = 'topic-name';
+    name.textContent = t.name;
+
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-primary';
+    btn.textContent = '進入';
+    btn.onclick = function () { startPractice(t.no); };
+
+    row.appendChild(no);
+    row.appendChild(name);
+    row.appendChild(btn);
+    listEl.appendChild(row);
+  });
+}
+
+function startPractice(topicNo) {
+  const qs = getQuestionsByTopic(topicNo);
+  const noticeEl = document.getElementById('practiceListNotice');
+
+  if (!qs.length) {
+    if (noticeEl) noticeEl.textContent = '此課題暫無題目（題庫尚未載入或尚未填入）。';
+    return;
+  }
+  if (noticeEl) noticeEl.textContent = '';
+
+  practiceTopicNo = topicNo;
+  practiceQuestions = qs.slice(0, 20);
+  practiceIndex = 0;
+  practiceCorrectCount = 0;
+
+  showPage('practiceQuizPage');
+  renderPracticeQuestion();
+}
+
+function renderPracticeQuestion() {
+  const q = practiceQuestions[practiceIndex];
+  const meta = document.getElementById('practiceMeta');
+  const container = document.getElementById('practiceQuestionContainer');
+  const feedback = document.getElementById('practiceFeedback');
+  const nextBtn = document.getElementById('practiceNextBtn');
+  const analysisBtn = document.getElementById('practiceAnalysisBtn');
+
+  feedback.className = 'feedback';
+  feedback.textContent = '';
+  nextBtn.classList.add('hidden');
+  analysisBtn.classList.add('hidden');
+  container.innerHTML = '';
+
+  meta.textContent = '課題 ' + practiceTopicNo + '　' + topicName(practiceTopicNo) +
+    '　第 ' + (practiceIndex + 1) + ' / ' + practiceQuestions.length + ' 題';
+
+  const qText = document.createElement('div');
+  qText.className = 'question-text';
+  qText.textContent = q.q;
+  container.appendChild(qText);
+
+  const opts = document.createElement('div');
+  opts.className = 'options';
+  q.options.forEach(function (opt, i) {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.textContent = letter(i) + '. ' + opt;
+    btn.onclick = function () { answerPractice(i, opts); };
+    opts.appendChild(btn);
+  });
+  container.appendChild(opts);
+}
+
+function answerPractice(selected, opts) {
+  const q = practiceQuestions[practiceIndex];
+  const feedback = document.getElementById('practiceFeedback');
+  const nextBtn = document.getElementById('practiceNextBtn');
+  const analysisBtn = document.getElementById('practiceAnalysisBtn');
+
+  opts.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+
+  const correctText = letter(q.correct) + '. ' + q.options[q.correct];
+
+  if (selected === q.correct) {
+    practiceCorrectCount++;
+    feedback.className = 'feedback correct';
+    feedback.textContent = '正確';
+  } else {
+    const reason = reasonOf(q, selected);
+    feedback.className = 'feedback incorrect';
+    let msg = '錯誤\n正確答案：' + correctText;
+    if (reason) msg += '\n錯誤原因：' + reason;
+    feedback.textContent = msg;
+  }
+
+  if (practiceIndex < practiceQuestions.length - 1) {
+    nextBtn.classList.remove('hidden');
+  } else {
+    analysisBtn.classList.remove('hidden');
+  }
+}
+
+function nextPractice() {
+  if (practiceIndex < practiceQuestions.length - 1) {
+    practiceIndex++;
+    renderPracticeQuestion();
+  }
+}
+
+function showPracticeAnalysis() {
+  const total = practiceQuestions.length;
+  const correct = practiceCorrectCount;
+  const pct = total ? Math.round((correct / total) * 100) : 0;
+
+  const content = document.getElementById('practiceAnalysisContent');
+  content.innerHTML = '';
+
+  const line1 = document.createElement('p');
+  line1.textContent = '課題 ' + practiceTopicNo + '　' + topicName(practiceTopicNo);
+
+  const line2 = document.createElement('p');
+  line2.className = 'score';
+  line2.textContent = '命中率：' + correct + ' / ' + total;
+
+  const line3 = document.createElement('p');
+  line3.className = 'score';
+  line3.textContent = pct + '%';
+
+  content.appendChild(line1);
+  content.appendChild(line2);
+  content.appendChild(line3);
+
+  showPage('practiceAnalysisPage');
+}
+
+// ---------- 挑戰模式 ----------
+function startChallenge() {
+  stopChallenge();
+
+  const noticeEl = document.getElementById('challengeNotice');
+  const container = document.getElementById('challengeQuestionContainer');
+  const nextBtn = document.getElementById('challengeNextBtn');
+  const prevBtn = document.getElementById('challengePrevBtn');
+  const finishBtn = document.getElementById('challengeFinishBtn');
+  const timerWrap = document.getElementById('challengeTimerWrap');
+  if (noticeEl) noticeEl.textContent = '';
+
+  if (!ALL_QUESTIONS.length) {
+    if (container) container.innerHTML = '';
+    if (nextBtn) nextBtn.classList.add('hidden');
+    if (prevBtn) prevBtn.disabled = true;
+    if (finishBtn) finishBtn.classList.add('hidden');
+    if (timerWrap) timerWrap.classList.add('hidden');
+    if (container) {
+      const p = document.createElement('p');
+      p.className = 'notice';
+      p.textContent = '題庫尚未載入，無法開始挑戰模式。';
+      container.appendChild(p);
+    }
+    showPage('challengePage');
+    return;
+  }
+
+  if (timerWrap) timerWrap.classList.remove('hidden');
+
+  const targetCount = Math.min(36, ALL_QUESTIONS.length);
+  challengeQuestions = shuffle(ALL_QUESTIONS.slice()).slice(0, targetCount);
+  challengeIndex = 0;
+  challengeAnswers = new Array(challengeQuestions.length).fill(null);
+  challengeTimerSeconds = 40 * 60;
+
+  startChallengeTimer();
+  showPage('challengePage');
+  renderChallengeQuestion();
+}
+
+function renderChallengeQuestion() {
+  const q = challengeQuestions[challengeIndex];
+  const container = document.getElementById('challengeQuestionContainer');
+  const nextBtn = document.getElementById('challengeNextBtn');
+  const prevBtn = document.getElementById('challengePrevBtn');
+  const finishBtn = document.getElementById('challengeFinishBtn');
+
+  container.innerHTML = '';
+
+  const isLast = challengeIndex === challengeQuestions.length - 1;
+  const answered = challengeAnswers[challengeIndex] !== null;
+
+  if (nextBtn) {
+    if (!isLast && answered) {
+      nextBtn.classList.remove('hidden');
+    } else {
+      nextBtn.classList.add('hidden');
+    }
+  }
+
+  if (finishBtn) {
+    if (isLast && answered) {
+      finishBtn.classList.remove('hidden');
+    } else {
+      finishBtn.classList.add('hidden');
+    }
+  }
+
+  if (prevBtn) {
+    prevBtn.disabled = challengeIndex === 0;
+  }
+
+  const qText = document.createElement('div');
+  qText.className = 'question-text';
+  qText.textContent = '第 ' + (challengeIndex + 1) + ' / ' + challengeQuestions.length + ' 題\n' + q.q;
+  container.appendChild(qText);
+
+  const opts = document.createElement('div');
+  opts.className = 'options';
+  q.options.forEach(function (opt, i) {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    if (challengeAnswers[challengeIndex] === i) btn.classList.add('selected');
+    btn.textContent = letter(i) + '. ' + opt;
+    btn.onclick = function () { answerChallenge(i, opts); };
+    opts.appendChild(btn);
+  });
+  container.appendChild(opts);
+}
+
+function answerChallenge(selected, opts) {
+  challengeAnswers[challengeIndex] = selected;
+
+  opts.querySelectorAll('button').forEach(function (b, i) {
+    b.classList.toggle('selected', i === selected);
+  });
+
+  const nextBtn = document.getElementById('challengeNextBtn');
+  const finishBtn = document.getElementById('challengeFinishBtn');
+  const isLast = challengeIndex === challengeQuestions.length - 1;
+
+  if (isLast) {
+    if (nextBtn) nextBtn.classList.add('hidden');
+    if (finishBtn) finishBtn.classList.remove('hidden');
+  } else {
+    if (nextBtn) nextBtn.classList.remove('hidden');
+    if (finishBtn) finishBtn.classList.add('hidden');
+  }
+}
+
+function nextChallenge() {
+  if (challengeIndex < challengeQuestions.length - 1) {
+    challengeIndex++;
+    renderChallengeQuestion();
+  }
+}
+
+function prevChallenge() {
+  if (challengeIndex > 0) {
+    challengeIndex--;
+    renderChallengeQuestion();
+  }
+}
+
+function startChallengeTimer() {
+  stopChallengeTimer();
+  updateChallengeTimer();
+  challengeTimerInterval = setInterval(function () {
+    challengeTimerSeconds--;
+    if (challengeTimerSeconds <= 0) {
+      challengeTimerSeconds = 0;
+      updateChallengeTimer();
+      finishChallenge();
+    } else {
+      updateChallengeTimer();
+    }
+  }, 1000);
+}
+
+function stopChallengeTimer() {
+  if (challengeTimerInterval !== null) {
+    clearInterval(challengeTimerInterval);
+    challengeTimerInterval = null;
+  }
+}
+
+function updateChallengeTimer() {
+  const textEl = document.getElementById('challengeTimerText');
+  const barEl = document.getElementById('challengeTimerBar');
+  const mins = Math.floor(challengeTimerSeconds / 60);
+  const secs = challengeTimerSeconds % 60;
+
+  if (textEl) textEl.textContent = '剩餘時間：' + pad(mins) + ':' + pad(secs);
+  if (barEl) {
+    const ratio = challengeTimerSeconds / (40 * 60);
+    barEl.style.width = (ratio * 100) + '%';
+  }
+}
+
+function stopChallenge() {
+  stopChallengeTimer();
+}
+
+function finishChallenge() {
+  stopChallenge();
+  renderChallengeAnalysis();
+  showPage('challengeAnalysisPage');
+}
+
+function renderChallengeAnalysis() {
+  const content = document.getElementById('challengeAnalysisContent');
+  content.innerHTML = '';
+
+  const total = challengeQuestions.length;
+  let correct = 0;
+  challengeQuestions.forEach(function (q, idx) {
+    if (challengeAnswers[idx] === q.correct) correct++;
+  });
+  const pct = total ? Math.round((correct / total) * 100) : 0;
+
+  const summary = document.createElement('p');
+  summary.className = 'score';
+  summary.textContent = '命中率：' + correct + ' / ' + total + '（' + pct + '%）';
+  content.appendChild(summary);
+
+  challengeQuestions.forEach(function (q, idx) {
+    const user = challengeAnswers[idx];
+
+    const block = document.createElement('div');
+    block.className = 'review-item';
+
+    const qEl = document.createElement('p');
+    qEl.className = 'review-q';
+    qEl.textContent = '第 ' + (idx + 1) + ' 題：' + q.q;
+    block.appendChild(qEl);
+
+    const correctLine = document.createElement('p');
+    correctLine.textContent = '正確答案：' + letter(q.correct) + '. ' + q.options[q.correct];
+    block.appendChild(correctLine);
+
+    const userLine = document.createElement('p');
+    if (user === null) {
+      userLine.textContent = '你的作答：未作答';
+    } else {
+      userLine.textContent = '你的作答：' + letter(user) + '. ' + q.options[user] +
+        (user === q.correct ? '（正確）' : '（錯誤）');
+    }
+    block.appendChild(userLine);
+
+    if (user !== null && user !== q.correct) {
+      const reason = reasonOf(q, user);
+      if (reason) {
+        const reasonLine = document.createElement('p');
+        reasonLine.className = 'review-reason';
+        reasonLine.textContent = '錯誤原因：' + reason;
+        block.appendChild(reasonLine);
+      }
+    }
+
+    content.appendChild(block);
+  });
+}
+
+// ---------- 學習前沿科技 ----------
+function renderTechPage() {
+  const container = document.getElementById('techContainer');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (!FRONTIER.length) {
+    const p = document.createElement('p');
+    p.className = 'notice';
+    p.textContent = '前沿科技內容即將推出。';
+    container.appendChild(p);
+    return;
+  }
+
+  FRONTIER.forEach(function (tech) {
+    container.appendChild(buildTechCard(tech));
+  });
+}
+
+function buildTechCard(tech) {
+  const card = document.createElement('article');
+  card.className = 'tech-card';
+
+  const title = document.createElement('h2');
+  title.textContent = tech.title || '';
+  card.appendChild(title);
+
+  const subtitle = document.createElement('p');
+  subtitle.className = 'tech-subtitle';
+  subtitle.textContent = tech.subtitle || '';
+  card.appendChild(subtitle);
+
+  // Dse連結 + 相關課題列表
+  const dse = document.createElement('div');
+  dse.className = 'tech-dse';
+  const dseLabel = document.createElement('span');
+  dseLabel.className = 'badge';
+  dseLabel.textContent = 'Dse連結';
+  dse.appendChild(dseLabel);
+  const relList = document.createElement('ul');
+  relList.className = 'related-list';
+  (tech.relatedTopics || []).forEach(function (rt) {
+    const li = document.createElement('li');
+    li.textContent = '課題 ' + rt.no + '　' + rt.name;
+    relList.appendChild(li);
+  });
+  dse.appendChild(relList);
+  card.appendChild(dse);
+
+  // 核心概念
+  const conceptsTitle = document.createElement('h3');
+  conceptsTitle.textContent = '核心概念';
+  card.appendChild(conceptsTitle);
+  const concepts = document.createElement('ul');
+  concepts.className = 'bullet-list';
+  (tech.coreConcepts || []).forEach(function (c) {
+    const li = document.createElement('li');
+    li.textContent = c;
+    concepts.appendChild(li);
+  });
+  card.appendChild(concepts);
+
+  // 科技概念說明
+  const conceptTitle = document.createElement('h3');
+  conceptTitle.textContent = '科技概念說明';
+  card.appendChild(conceptTitle);
+  const concept = document.createElement('p');
+  concept.className = 'tech-concept';
+  concept.textContent = tech.concept || '';
+  card.appendChild(concept);
+
+  // 可靠來源（新分頁開啟）
+  if (tech.sourceUrl) {
+    const source = document.createElement('a');
+    source.className = 'btn btn-source';
+    source.href = tech.sourceUrl;
+    source.target = '_blank';
+    source.rel = 'noopener';
+    source.textContent = '可靠來源';
+    card.appendChild(source);
+  }
+
+  // 5 條相關互動 MC
+  const mcqsTitle = document.createElement('h3');
+  mcqsTitle.textContent = '相關互動 MC';
+  card.appendChild(mcqsTitle);
+  const mcqs = tech.mcqs || [];
+  if (!mcqs.length) {
+    const p = document.createElement('p');
+    p.className = 'notice';
+    p.textContent = '暫無互動 MC。';
+    card.appendChild(p);
+  } else {
+    mcqs.forEach(function (mcq, mi) {
+      card.appendChild(buildTechMcq(mcq, mi));
+    });
+  }
+
+  return card;
+}
+
+function buildTechMcq(mcq, mi) {
+  const block = document.createElement('div');
+  block.className = 'mcq';
+
+  const qEl = document.createElement('p');
+  qEl.className = 'mcq-q';
+  qEl.textContent = '第 ' + (mi + 1) + ' 題：' + mcq.q;
+  block.appendChild(qEl);
+
+  const opts = document.createElement('div');
+  opts.className = 'options';
+  const feedback = document.createElement('p');
+  feedback.className = 'feedback';
+
+  let answered = false;
+
+  mcq.options.forEach(function (opt, oi) {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.textContent = letter(oi) + '. ' + opt;
+    btn.onclick = function () {
+      if (answered) return;
+      answered = true;
+      opts.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+
+      if (oi === mcq.correct) {
+        feedback.className = 'feedback correct';
+        feedback.textContent = '正確';
+      } else {
+        const reason = reasonOf(mcq, oi);
+        feedback.className = 'feedback incorrect';
+        let msg = '錯誤\n正確答案：' + letter(mcq.correct) + '. ' + mcq.options[mcq.correct];
+        if (reason) msg += '\n錯誤原因：' + reason;
+        feedback.textContent = msg;
+      }
+    };
+    opts.appendChild(btn);
+  });
+
+  block.appendChild(opts);
+  block.appendChild(feedback);
+  return block;
+}
+
+// ---------- 初始化 ----------
+showPage('homePage');
+
+</script>
+</body>
+</html>
